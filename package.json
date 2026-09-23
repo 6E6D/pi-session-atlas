@@ -1,0 +1,51 @@
+{
+  "name": "session-atlas",
+  "version": "0.3.1",
+  "private": true,
+  "description": "Deterministic local index and citation CLI over Pi session archives",
+  "author": "Nima Maleki",
+  "license": "MIT",
+  "type": "module",
+  "keywords": ["pi-package", "session-history", "cli"],
+  "bin": {
+    "atlas": "bin/atlas"
+  },
+  "files": [
+    "bin/atlas",
+    "dist/*.js",
+    "dist/queries/*.js",
+    "skills/session-atlas/SKILL.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "pi": {
+    "extensions": [],
+    "skills": ["./skills/session-atlas"],
+    "prompts": [],
+    "themes": []
+  },
+  "scripts": {
+    "atlas": "node bin/atlas",
+    "build": "node scripts/check-dist.mjs && tsc -p tsconfig.build.json && node scripts/check-dist.mjs --complete",
+    "check": "npm run typecheck && npm run build && npm test",
+    "test": "node --test tests/*.test.ts",
+    "typecheck": "tsc --noEmit",
+    "prepack": "npm run check"
+  },
+  "engines": {
+    "node": ">=24.15.0 <25"
+  },
+  "dependencies": {},
+  "peerDependencies": {
+    "@earendil-works/pi-coding-agent": "*"
+  },
+  "peerDependenciesMeta": {
+    "@earendil-works/pi-coding-agent": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "@types/node": "^26.2.0",
+    "typescript": "^7.0.2"
+  }
+}
