@@ -118,7 +118,7 @@ Atlas stores a derived SQLite index separately from the original sessions. Queri
 ## Limits and privacy
 
 - **The archive is evidence, not ground truth.** Old answers and commands may be wrong or unsafe. File references do not necessarily explain why a change was made. Unfinished-work results are candidates, not obligations.
-- **The index can be stale or incomplete.** Missing sessions cannot be recovered from citations. Source checking verifies identity and indexed size/mtime, not content hashes or factual correctness.
+- **The index can be stale or incomplete.** Missing sessions cannot be recovered from citations. Source checking verifies identity and indexed size/mtime, not content hashes or factual correctness. Queries do not change logical Atlas records, but SQLite may coordinate reads through WAL/SHM metadata.
 - **History is not an exact model-context replay.** Context edits are separately searchable; omitted originals remain in history. Atlas does not reconstruct every provider request.
 - **Recorded cost is not a verified bill.** Usage reports include recorded standalone usage, but do not reconcile provider invoices.
 - **Local retrieval does not make every later use local.** Atlas makes no LLM calls. If Pi sends retrieved text to a model, that follows your Pi configuration and data permissions.
