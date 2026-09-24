@@ -6,6 +6,8 @@ A lot of useful work happens inside an AI session. Thoughtful search and analysi
 
 I built it to recover earlier work, investigate recurring errors and bugs, and develop ideas for features and improvements. Session history becomes material to learn from, not just a record of what happened.
 
+![Session Atlas searches earlier Pi sessions and returns relevant entries; analysis and judgment follow retrieval.](docs/assets/session-atlas-overview.png)
+
 ## Why this exists
 
 Pi can already read its session files. If you know which conversation you need, that may be enough.
