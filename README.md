@@ -37,7 +37,7 @@ Search and trace return matching session entries. The error report groups record
 
 ## Install and index
 
-Use the reviewed `session-atlas-0.3.1.tgz` artifact and its checksum file when available from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). Version 0.3.1 is the planned first public preview, not an npm-registry release.
+Use the reviewed `session-atlas-0.3.1.tgz` artifact and its checksum file when available from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). Version 0.3.1 is the first public preview, available from GitHub Releases. It is not an npm-registry release.
 
 **Requirements:** Linux x64, Node 24.15.0 or a later Node 24 patch, and a trusted compatible Pi installation. The original compatibility baseline is Pi 0.85.1. Later checks cover synthetic Pi 0.87.0 compatibility and native skill discovery on Pi 0.87.1; they do not establish every workflow on those versions. macOS and Windows are not validated.
 
