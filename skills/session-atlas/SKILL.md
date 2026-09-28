@@ -1,6 +1,6 @@
 ---
 name: session-atlas
-description: Search, inspect, trace, and cite authorized local Pi session history with the deterministic Session Atlas CLI. Use for earlier-session evidence, idea/file/command origins, unfinished or abandoned-work candidates, and cost/error reports. Prefer narrow JSON queries over broad transcript scans.
+description: Search and cite authorized local Pi session history. Use to find previous discussions or decisions, trace idea/file/command origins, identify unfinished or abandoned-work candidates, and report recorded costs or errors. Prefer narrow JSON queries over broad transcript scans.
 license: MIT
 compatibility: Complete built Session Atlas package; Node 24.15.0 or later within Node 24. Indexing and legacy normalization require a trusted compatible installed Pi parser. Compatibility baseline is Linux x64 and Pi 0.85.1; no global atlas command is required.
 ---

@@ -39,7 +39,7 @@ Search and trace return matching session entries. The error report groups record
 
 ## Install and index
 
-Use the reviewed `session-atlas-0.3.1.tgz` artifact and its checksum file when available from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). Version 0.3.1 is the first public preview, available from GitHub Releases. It is not an npm-registry release.
+Use the reviewed `session-atlas-0.3.2.tgz` artifact and its checksum file when available from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). Version 0.3.2 is a patch preview refining the skill's discovery description; the CLI and cache format are unchanged from 0.3.1. It is not an npm-registry release.
 
 **Requirements:** Linux x64, Node 24.15.0 or a later Node 24 patch, and a trusted compatible Pi installation. The original compatibility baseline is Pi 0.85.1. Later checks cover synthetic Pi 0.87.0 compatibility and native skill discovery on Pi 0.87.1; they do not establish every workflow on those versions. macOS and Windows are not validated.
 
@@ -50,7 +50,7 @@ Verify the download against the release checksum. Replace the paths below with y
 ```bash
 npm install --offline --ignore-scripts --omit=dev --no-audit --no-fund \
   --prefix /absolute/path/to/new-local-tools \
-  /absolute/path/to/session-atlas-0.3.1.tgz
+  /absolute/path/to/session-atlas-0.3.2.tgz
 ```
 
 ### 2. Make the skill available to Pi
@@ -126,7 +126,7 @@ Atlas stores a derived SQLite index separately from the original sessions. Queri
 - **Local retrieval does not make every later use local.** Atlas makes no LLM calls. If Pi sends retrieved text to a model, that follows your Pi configuration and data permissions.
 - **Sessions and caches can contain secrets.** There is no automatic redaction or per-project access-control layer. Filters are not security boundaries. `show --context 0 --json` exposes full raw entries and should not be used for routine browsing or public examples.
 
-Version 0.3.1 uses schema 4 / extraction 4. Older caches or changed parser identities need a deliberate rebuild or a new cache. Preserve the old cache if you need it; do not force a refused target, delete locks or relabel old data. Atlas refuses unsafe or unrecognised cache targets rather than repairing them automatically.
+Version 0.3.2 retains schema 4 / extraction 4. This patch alone does not require a cache rebuild. Older caches or changed parser identities need a deliberate rebuild or a new cache. Preserve the old cache if you need it; do not force a refused target, delete locks or relabel old data. Atlas refuses unsafe or unrecognised cache targets rather than repairing them automatically.
 
 ## Development and feedback
 
