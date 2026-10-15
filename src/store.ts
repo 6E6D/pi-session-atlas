@@ -28,6 +28,24 @@ export interface FileMetadata {
   inode?: number;
 }
 
+function identityMismatchMessage(previous: CacheIdentity, requested: CacheIdentity): string {
+  const changes: string[] = [];
+  const display = (value: unknown) => value === undefined ? "(absent)" : JSON.stringify(value);
+  const compare = (name: string, before: unknown, after: unknown) => {
+    if (!isDeepStrictEqual(before, after)) changes.push(`${name}: ${display(before)} -> ${display(after)}`);
+  };
+  for (const key of ["sourceRoot", "pathHome", "schemaVersion", "extractionVersion", "toolHeadBytes"] as const) {
+    compare(key, previous[key], requested[key]);
+  }
+  for (const key of ["packageName", "packageVersion", "modulePath", "sessionVersion", "codeFingerprint"] as const) {
+    compare(`parser.${key}`, previous.parser[key], requested.parser[key]);
+  }
+  return `cache identity differs (stored -> requested): ${changes.join("; ")}. ` +
+    "Incremental refresh refused; this is not ordinary cache staleness or proof of corruption. " +
+    "After explicit approval, rebuild with --rebuild or use a new private cache path. " +
+    "No automatic rebuild was attempted.";
+}
+
 export class AtlasStore {
   readonly databasePath: string;
   readonly schemaRebuilt = false; // No automatic rebuilds.
@@ -54,7 +72,7 @@ export class AtlasStore {
           throw new CacheError("source root differs; explicit --rebuild --rebind --sessions-dir PATH required", "CACHE_REBIND_REQUIRED");
         }
         if (!isDeepStrictEqual(known.coverage.identity, options.identity) && !options.rebuild) {
-          throw new CacheError("cache parser/extraction/settings identity differs; explicit --rebuild required", "CACHE_IDENTITY_MISMATCH");
+          throw new CacheError(identityMismatchMessage(known.coverage.identity, options.identity), "CACHE_IDENTITY_MISMATCH");
         }
       }
       if (options.rebuild && !options.identity) throw new CacheError("rebuild requires validated source/parser identity", "CACHE_IDENTITY_INVALID");

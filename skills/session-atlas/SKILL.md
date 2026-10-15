@@ -37,9 +37,10 @@ build source, change PATH or alter Pi configuration as an automatic repair.
    private, business, collaborative, third-party or secret-bearing material.
 2. Use an existing authorized cache with the narrowest useful query and limit.
    `--cwd` and `--dir` improve relevance but are not security boundaries.
-3. Inspect reported cache scope, scan time, failures and unverified files.
-   Queries do not refresh. Without a permitted refresh, identify the results
-   as stored observations and state any relevant coverage limitation.
+3. Check cache coverage before interpreting results. If the last successful
+   scan predates the requested window's end, resolve freshness under the existing
+   refresh-authority rules or state the limitation. Empty results from an older
+   cache do not establish absence of activity.
 4. Refresh once for the task only when current user approval or an applicable
    standing rule covers both the cache and its complete source root. A request
    about one historical topic is not by itself permission to scan every domain.
