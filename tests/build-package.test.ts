@@ -85,6 +85,8 @@ test("actual allowlisted tarball installs offline without Pi/compiler dependenci
   assert.match(command(process.execPath, [executable, "--help"], a.root, a.env).stdout, /Usage:/);
   for (const args of [
     ["index"], ["sessions"], ["search", "Atlas", "--exact"],
+    ["prompts", "--since", "2026-08-23", "--cwd", "/workspace/*", "--limit", "1"],
+    ["report", "cost", "--by", "day", "--until", "2026-08-23", "--cwd", "/workspace/*", "--model", "test-model", "--provider", "test-provider"],
     ["show", "fixture-session-alpha", "00000001", "--context", "0"],
     ["trace", "--file", "README.md"], ["branches", "--abandoned"], ["unfinished"],
     ["cmd", "npm test", "--failed"], ["report", "cost", "--by", "model"], ["report", "errors", "--by", "tool"],

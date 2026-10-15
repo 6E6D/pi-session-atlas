@@ -3,11 +3,15 @@ import type { DatabaseSync } from "node:sqlite";
 import { citationFor, truncateDisplay } from "../query-db.ts";
 import { sessionFromRow } from "./helpers.ts";
 
-export type CostGrouping = "month" | "project" | "model" | "provider";
+export type CostGrouping = "day" | "month" | "project" | "model" | "provider";
 
 export interface CostReportOptions {
   by: CostGrouping;
   since?: string;
+  until?: string;
+  cwdGlob?: string;
+  models?: string[];
+  providers?: string[];
   top: number;
 }
 
@@ -28,6 +32,13 @@ export interface CostGroup extends UsageTotals {
 export interface CostReport {
   grouping: CostGrouping;
   since: string | null;
+  filters: {
+    since: string | null;
+    until: string | null;
+    cwdGlob: string | null;
+    models: string[];
+    providers: string[];
+  };
   totals: UsageTotals;
   groups: CostGroup[];
   topSessions: Array<{
@@ -61,18 +72,32 @@ function usageTotals(row: Record<string, string | number | bigint | null>): Usag
 }
 
 export function costReport(database: DatabaseSync, options: CostReportOptions): CostReport {
-  const sessionParameters = options.since ? [options.since] : [];
-  // Date-scoped usage is aggregated from the same eligible entries for totals,
-  // project groups and top sessions. Identity/citation metadata stays session-
-  // based; unbounded reports retain header-only/zero-usage session inventory.
-  const scopedSessions = options.since ? `(
+  const conditions: string[] = [];
+  const entryParameters: string[] = [];
+  for (const [condition, value] of [
+    ["e.ts >= ?", options.since], ["e.ts <= ?", options.until], ["s.cwd GLOB ?", options.cwdGlob],
+  ] as const) {
+    if (value !== undefined) { conditions.push(condition); entryParameters.push(value); }
+  }
+  for (const [column, values] of [["e.model", options.models], ["e.provider", options.providers]] as const) {
+    if (values?.length) {
+      conditions.push(`${column} IN (${values.map(() => "?").join(", ")})`);
+      entryParameters.push(...values);
+    }
+  }
+  const entryWhere = conditions.length ? `WHERE ${conditions.join(" AND ")}` : "";
+  const entryScoped = Boolean(options.since || options.until || options.models?.length || options.providers?.length);
+  const sessionParameters = entryScoped ? entryParameters : options.cwdGlob !== undefined ? [options.cwdGlob] : [];
+  // Every report view shares the exact entry filter. With no entry-level filter,
+  // retain legacy header-only/zero-usage inventory within the selected cwd.
+  const scopedSessions = entryScoped ? `(
     SELECT s.uuid, s.file, s.cwd, s.name, s.first_user_text, s.created, s.last_activity,
            sum(e.cost) AS cost_total, sum(e.tokens_in) AS tokens_in,
            sum(e.tokens_out) AS tokens_out, sum(e.cache_read) AS cache_read,
            sum(e.cache_write) AS cache_write
     FROM entries AS e JOIN sessions AS s ON s.uuid = e.session_uuid
-    WHERE e.ts >= ? GROUP BY s.uuid
-  )` : "sessions";
+    ${entryWhere} GROUP BY s.uuid
+  )` : options.cwdGlob !== undefined ? "(SELECT * FROM sessions WHERE cwd GLOB ?)" : "sessions";
   const totalRow = database
     .prepare(
       `SELECT coalesce(sum(cost_total), 0) AS cost,
@@ -98,13 +123,13 @@ export function costReport(database: DatabaseSync, options: CostReportOptions): 
       .all(...sessionParameters) as Array<Record<string, string | number | bigint | null>>;
   } else {
     const keyExpression =
-      options.by === "month"
-        ? "substr(e.ts, 1, 7)"
-        : options.by === "model"
-          ? "coalesce(e.model, '(unattributed)')"
-          : "coalesce(e.provider, '(unattributed)')";
-    const entryWhere = options.since ? "WHERE e.ts >= ?" : "";
-    const entryParameters = options.since ? [options.since] : [];
+      options.by === "day"
+        ? "substr(e.ts, 1, 10)"
+        : options.by === "month"
+          ? "substr(e.ts, 1, 7)"
+          : options.by === "model"
+            ? "coalesce(e.model, '(unattributed)')"
+            : "coalesce(e.provider, '(unattributed)')";
     groupRows = database
       .prepare(
         `SELECT ${keyExpression} AS group_key,
@@ -112,11 +137,11 @@ export function costReport(database: DatabaseSync, options: CostReportOptions): 
                 sum(e.cost) AS cost, sum(e.tokens_in) AS tokens_in,
                 sum(e.tokens_out) AS tokens_out, sum(e.cache_read) AS cache_read,
                 sum(e.cache_write) AS cache_write
-         FROM entries AS e ${entryWhere}
+         FROM entries AS e JOIN sessions AS s ON s.uuid = e.session_uuid ${entryWhere}
          GROUP BY group_key
          HAVING sum(e.cost) != 0 OR sum(e.tokens_in) != 0 OR sum(e.tokens_out) != 0
              OR sum(e.cache_read) != 0 OR sum(e.cache_write) != 0
-         ORDER BY cost DESC, group_key`,
+         ORDER BY ${options.by === "day" ? "group_key" : "cost DESC, group_key"}`,
       )
       .all(...entryParameters) as Array<Record<string, string | number | bigint | null>>;
   }
@@ -126,13 +151,15 @@ export function costReport(database: DatabaseSync, options: CostReportOptions): 
       `SELECT uuid, file, cwd, name, first_user_text, created, last_activity,
               cost_total, tokens_in, tokens_out
        FROM ${scopedSessions}
-       ORDER BY cost_total DESC, last_activity DESC LIMIT ?`,
+       ORDER BY cost_total DESC, last_activity DESC, uuid LIMIT ?`,
     )
     .all(...sessionParameters, options.top) as Array<Record<string, string | number | null>>;
 
   return {
     grouping: options.by,
     since: options.since ?? null,
+    filters: { since: options.since ?? null, until: options.until ?? null,
+      cwdGlob: options.cwdGlob ?? null, models: options.models ?? [], providers: options.providers ?? [] },
     totals: usageTotals(totalRow),
     groups: groupRows.map((row) => ({
       key: String(row.group_key),

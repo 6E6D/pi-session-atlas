@@ -46,11 +46,12 @@ export function openQueryDatabase(databasePath: string): DatabaseSync {
   }
 }
 
-export function resolveSession(database: DatabaseSync, reference: string): SessionIdentity {
+export function resolveSession(database: DatabaseSync, reference: string, options: { omitFirstUserText?: boolean } = {}): SessionIdentity {
+  const firstUserText = options.omitFirstUserText ? "NULL AS first_user_text" : "first_user_text";
   if (reference.length === 0) throw new AtlasQueryError("session reference must not be empty", "SESSION_NOT_FOUND");
   const exact = database
     .prepare(
-      `SELECT uuid, file, cwd, name, first_user_text, created, last_activity
+      `SELECT uuid, file, cwd, name, ${firstUserText}, created, last_activity
        FROM sessions WHERE uuid = ?`,
     )
     .get(reference) as Record<string, string | null> | undefined;
@@ -58,7 +59,7 @@ export function resolveSession(database: DatabaseSync, reference: string): Sessi
 
   const rows = database
     .prepare(
-      `SELECT uuid, file, cwd, name, first_user_text, created, last_activity
+      `SELECT uuid, file, cwd, name, ${firstUserText}, created, last_activity
        FROM sessions
        WHERE substr(uuid, 1, length(?)) = ?
        ORDER BY uuid LIMIT 2`,

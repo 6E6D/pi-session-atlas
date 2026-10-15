@@ -15,6 +15,7 @@ import { searchCommands } from "./queries/commands.ts";
 import { costReport, errorReport, type CostGrouping, type ErrorGrouping } from "./queries/reports.ts";
 import { prepareSearchQuery, search } from "./queries/search.ts";
 import { listSessions } from "./queries/sessions.ts";
+import { listPrompts, validatePromptOptions, type PromptListing } from "./queries/prompts.ts";
 import { showSession } from "./queries/show.ts";
 import { traceFile } from "./queries/trace.ts";
 import { findUnfinished } from "./queries/unfinished.ts";
@@ -30,12 +31,16 @@ Usage:
   atlas search <query> [--kind KIND] [--exact | --fts] [--dir GLOB] [--cwd GLOB]
                        [--since DATE] [--until DATE] [--limit N]
   atlas sessions [--dir GLOB] [--cwd GLOB] [--since DATE] [--name PATTERN]
+  atlas prompts --since DATE [--until DATE] [--cwd GLOB] [--dir GLOB]
+                [--session SESSION] [--limit 1..100] [--max-chars 1..2000]
   atlas show <session> [entry] [--context N]
   atlas trace --file PATH [--glob] [--since DATE]
   atlas branches [--abandoned] [--session SESSION]
   atlas unfinished [--since DATE]
   atlas cmd <pattern> [--failed] [--cwd GLOB] [--since DATE] [--until DATE]
-  atlas report cost [--by month|project|model|provider] [--since DATE] [--top N]
+  atlas report cost [--by day|month|project|model|provider] [--top N]
+                    [--since DATE] [--until DATE] [--cwd GLOB]
+                    [--model ID ...] [--provider ID ...]
   atlas report errors [--by tool|signature] [--since DATE]
   atlas cite <session> [entry] [--verify-source]
 
@@ -49,6 +54,17 @@ Search modes (pre-1.0 compatibility change):
   --exact: case-sensitive substring, including punctuation and original spacing.
   Empty/whitespace-only input is rejected. --fts and --exact cannot be combined.
   Use -- before literal arguments such as --help or --json.
+
+Recent requests and costs:
+  prompts requires --since and at least one scope: --cwd, --dir or --session.
+  Defaults: 20 messages, 1200 Unicode code points per excerpt. Long messages
+  stay eligible; output marks truncation, no-text entries and selection counts.
+  User-role is not verified human authorship; newest-first is not representative.
+  Branch membership is indexed history, not current model visibility or approval.
+  Cost filters apply to individual usage entries, including standalone usage.
+  Model/provider IDs are exact and case-sensitive; repeated IDs are OR within
+  a category, categories combine with AND. Day groups use UTC entry dates.
+  Costs are recorded usage, not invoices. Cwd filters are not access controls.
 
 Source evidence:
   show --context 0 returns full target text and, under --json, original raw JSON
@@ -269,6 +285,15 @@ function printHuman(command: string, results: unknown[]): void {
     for (const item of results as Array<Record<string, unknown>>) {
       writeStdout(`${String(item.citation)}\n  [${String(item.kind)}] ${String(item.timestamp)}\n  ${String(item.snippet)}\n`);
     }
+  } else if (command === "prompts") {
+    const report = results[0] as PromptListing;
+    const { selection } = report;
+    writeStdout(`Prompts: ${selection.returned} of ${selection.totalMatching}; newest-first; hasMore=${selection.hasMore}; limit=${selection.limit}; maxChars=${selection.maxChars}\n`);
+    writeStdout(`Authorship: ${report.authorship}. ${report.limitation}\nFilters: ${JSON.stringify(report.filters)}\n`);
+    writeStdout(`Returned without indexed text: ${selection.withoutIndexedText}\n`);
+    for (const item of report.messages) {
+      writeStdout(`${item.citation}\n  ${item.timestamp} observed-branch=${item.onObservedBranch}${item.textTruncated ? " [truncated]" : ""}${!item.textAvailable ? " [no indexed text]" : ""}\n  ${item.excerpt}\n`);
+    }
   } else if (command === "sessions") {
     for (const item of results as Array<Record<string, unknown>>) {
       writeStdout(
@@ -316,6 +341,7 @@ function printHuman(command: string, results: unknown[]): void {
     const report = results[0] as Record<string, unknown>;
     if ("totals" in report) {
       const totals = report.totals as Record<string, unknown>;
+      writeStdout(`Recorded usage, not invoices. Filters: ${JSON.stringify(report.filters)}${report.grouping === "day" ? "; daily groups use UTC entry dates" : ""}\n`);
       writeStdout(`Cost: ${Number(totals.cost).toFixed(6)}; input ${String(totals.tokensIn)}; output ${String(totals.tokensOut)}; cache read ${String(totals.cacheRead)}\n`);
       for (const group of report.groups as Array<Record<string, unknown>>) {
         writeStdout(`  ${String(group.key)}: ${Number(group.cost).toFixed(6)} (${String(group.sessions)} session(s))\n`);
@@ -368,7 +394,7 @@ async function runQueryCommand(
   command: string,
   args: string[],
 ): Promise<CommandOutcome> {
-  if (!["search", "sessions", "show", "trace", "branches", "unfinished", "cmd", "report", "cite"].includes(command)) {
+  if (!["search", "sessions", "prompts", "show", "trace", "branches", "unfinished", "cmd", "report", "cite"].includes(command)) {
     throw new UsageError(`unknown command: ${command}`);
   }
   let specs: Record<string, OptionSpec> = { ...COMMON_QUERY_OPTIONS };
@@ -383,6 +409,10 @@ async function runQueryCommand(
       "--since": { kind: "string" },
       "--until": { kind: "string" },
     };
+  } else if (command === "prompts") {
+    specs = { ...specs, "--since": { kind: "string" }, "--until": { kind: "string" },
+      "--cwd": { kind: "string" }, "--dir": { kind: "string" },
+      "--session": { kind: "string" }, "--max-chars": { kind: "string" } };
   } else if (command === "sessions") {
     specs = {
       ...specs,
@@ -410,13 +440,17 @@ async function runQueryCommand(
       "--by": { kind: "string" },
       "--since": { kind: "string" },
       "--top": { kind: "string" },
+      "--until": { kind: "string" },
+      "--cwd": { kind: "string" },
+      "--model": { kind: "string", repeat: true },
+      "--provider": { kind: "string", repeat: true },
     };
   }
   const parsed = parseOptions(args, specs);
   if (booleanOption(parsed, "--help")) return { results: [], ok: true, json: false, help: true };
   if (parsed.positionals.some((value) => !value.trim())) throw new UsageError("positional arguments must not be empty");
   const json = booleanOption(parsed, "--json");
-  const limit = integerOption(parsed, "--limit", 20, 1, 10_000);
+  const limit = integerOption(parsed, "--limit", 20, 1, command === "prompts" ? 100 : 10_000);
   const since = dateBound(stringOption(parsed, "--since"), false);
   const until = dateBound(stringOption(parsed, "--until"), true);
   if (since && until && since > until) throw new UsageError("--since must not be later than --until");
@@ -455,6 +489,14 @@ async function runQueryCommand(
       };
       prepareSearchQuery(options);
       return { results: search(getDatabase(), options), ok: true, json };
+    }
+    if (command === "prompts") {
+      if (parsed.positionals.length > 0) throw new UsageError("prompts takes no positional arguments");
+      const options = { since: since ?? "", until, cwdGlob: stringOption(parsed, "--cwd"),
+        sessionDirectoryGlob: stringOption(parsed, "--dir"), sessionReference: stringOption(parsed, "--session"),
+        limit, maxChars: integerOption(parsed, "--max-chars", 1200, 1, 2000) };
+      validatePromptOptions(options);
+      return { results: [listPrompts(getDatabase(), options)], ok: true, json };
     }
     if (command === "sessions") {
       if (parsed.positionals.length > 0) throw new UsageError("sessions takes no positional arguments");
@@ -538,13 +580,14 @@ async function runQueryCommand(
       const reportType = parsed.positionals[0];
       if (reportType === "cost") {
         const by = stringOption(parsed, "--by") ?? "month";
-        if (!["month", "project", "model", "provider"].includes(by)) {
+        if (!["day", "month", "project", "model", "provider"].includes(by)) {
           throw new UsageError(`invalid cost grouping: ${by}`);
         }
         return {
           results: [costReport(getDatabase(), {
             by: by as CostGrouping,
-            since,
+            since, until, cwdGlob: stringOption(parsed, "--cwd"),
+            models: stringOptions(parsed, "--model"), providers: stringOptions(parsed, "--provider"),
             top,
           })],
           ok: true,
@@ -552,6 +595,9 @@ async function runQueryCommand(
         };
       }
       if (reportType === "errors") {
+        for (const option of ["--until", "--cwd", "--model", "--provider"]) {
+          if (parsed.values.has(option)) throw new UsageError(`${option} is supported only on report cost`);
+        }
         const by = stringOption(parsed, "--by") ?? "tool";
         if (!["tool", "signature"].includes(by)) throw new UsageError(`invalid error grouping: ${by}`);
         return {
