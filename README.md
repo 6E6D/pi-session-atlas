@@ -81,6 +81,31 @@ Reuse those paths in the same shell for the examples. Check the returned coverag
 
 **Periodic indexing.** Schedule the same index command with your operating system's scheduler, such as a systemd user timer on Linux. An hourly run is one option: it incrementally indexes changed sessions so recent work is usually available without a manual refresh. Scheduling is a separate setup step, not a service installed by Atlas. Give the job explicit session and cache paths and keep logs free of session content. A failed run should report the error, not automatically rebuild or change the selected archive.
 
+#### Make scheduled refreshes inspectable
+
+A scheduled job may not inherit your interactive shell's environment. If Pi is installed in a versioned or non-global location, explicitly select its trusted package directory with `ATLAS_PI_PACKAGE`. Use the same parser for manual and scheduled indexing:
+
+```bash
+export ATLAS_PI_PACKAGE="/absolute/path/to/trusted-pi/node_modules/@earendil-works/pi-coding-agent"
+node "$ATLAS" index --db "$DB" --sessions-dir "$SESSIONS" --json
+```
+
+For a systemd service, put the absolute parser path in `Environment=ATLAS_PI_PACKAGE=...`; shell `export` statements do not belong in the unit. Use an explicit Node executable or configure its `PATH` too. Keep the selected installation available until you deliberately adopt another parser.
+
+An active timer is not proof of successful indexing. For your own unit names, inspect both scheduling and execution:
+
+```bash
+systemctl --user list-timers atlas-index.timer
+systemctl --user status atlas-index.service
+journalctl --user -u atlas-index.service --since today
+```
+
+`atlas-index` is an example name, not a unit installed by Atlas. `StandardOutput=journal` and `StandardError=journal` keep service diagnostics with its journal. This does not configure proactive failure notifications. Also inspect query JSON's `cache.lastSuccessfulScan`, `cache.lastAttempt` and `cache.unverifiedFiles`: queries report stored coverage and never refresh the cache. Check index exit status, `ok`, failures and warnings together; a running timer or an old successful scan does not establish current coverage.
+
+If refresh fails because Pi cannot be resolved, correct the explicit parser selection first. If the selected parser's identity differs from the cache, stop for a deliberate rebuild or successor-cache decision. A package-version or installation-path change can require this even when the reported parser-code fingerprint is unchanged. Do not bypass the identity check or put `--rebuild` in a routine timer.
+
+Before an approved rebuild, preserve a consistent SQLite backup (for example, SQLite's online backup API, not just a copy of the database while a writer may be active), the old identity and the configuration needed to interpret it. A new private cache path is the non-replacement alternative. Approval must cover reading the complete selected archive, not merely one query's project filter. After repair, verify an ordinary incremental run and then an actual scheduled run. Preserve warnings and incomplete-coverage qualifications rather than treating missing results as proof that no conversation occurred.
+
 **On-demand indexing through Pi.** The included skill tells Pi to inspect the cache's scan time, coverage and warnings. When a refresh is needed, Pi can run the index command once for the task if you have approved access to the complete selected session directory and writes to that cache, either for this request or under an existing standing permission. Otherwise it should ask. The skill guides this behaviour; it is not an automatic hook or a permission grant.
 
 For example:
