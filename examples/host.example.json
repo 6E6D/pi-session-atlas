@@ -1,0 +1,7 @@
+{
+  "schemaVersion": 1,
+  "cachePath": "/absolute/path/to/private-cache/atlas.db",
+  "sessionsPath": "/absolute/path/to/authorized-sessions",
+  "pathHome": "/absolute/path/to/archive-owner-home",
+  "piPackagePath": "/absolute/path/to/trusted-pi-package"
+}

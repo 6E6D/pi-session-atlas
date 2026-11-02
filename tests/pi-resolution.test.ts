@@ -78,7 +78,8 @@ test("Atlas-local real Pi wins over Node-global; invalid local selection never h
   assert.equal(refused(runNode(process.execPath, [executable, "index", "--json"], a.root, env)).code, "PI_PARSER_UNAVAILABLE");
   assert.deepEqual(fingerprint(a.databasePath), before); assert.equal(existsSync(marker), false);
   meta.name = PI_NAME; writeFileSync(join(selected, "package.json"), JSON.stringify(meta));
-  const spaced = join(a.root, "Pi with trailing space "); renameSync(selected, spaced);
+  // Keep the copied dependency tree reachable while testing a meaningful space.
+  const spaced = join(dirname(selected), "Pi with trailing space "); renameSync(selected, spaced);
   for (const [i, override] of [spaced, relative(a.root, spaced), join(spaced, "dist", "index.js")].entries()) {
     const r = runNode(process.execPath, [executable, "index", "--db", join(a.atlasHome, `spaced-${i}.db`), "--json"], a.root, { ...env, ATLAS_PI_PACKAGE: override });
     assert.equal(r.status, 0, r.stdout + r.stderr);
@@ -94,12 +95,16 @@ test("Node-adjacent and lazy npm routes resolve real Pi while caller cwd package
   const npmRoot = resolve(realPi, "../..");
   const probe = npmProbe(a.root, `test "$1" = root && test "$2" = -g || exit 21\necho called >> ${shellQuote(marker)}\nprintf '%s\\n' ${shellQuote(npmRoot)}`);
   const env = { ...a.env, PATH: probe, ATLAS_PI_PACKAGE: undefined };
-  const node = copyNode(a.root);
-  for (const [i, runtime] of [process.execPath, node].entries()) {
+  // Both routes are synthetic: do not assume the invoking Node has global Pi.
+  const adjacentNode = copyNode(join(a.root, "adjacent"));
+  const adjacentPi = join(dirname(dirname(adjacentNode)), "lib", "node_modules", PI_NAME);
+  copyPi(realPi, adjacentPi);
+  const fallbackNode = copyNode(join(a.root, "fallback"));
+  for (const [i, runtime] of [adjacentNode, fallbackNode].entries()) {
     const r = runNode(runtime, [executable, "index", "--db", join(a.atlasHome, `route-${i}.db`), "--json"], cwd, env);
     assert.equal(r.status, 0, r.stdout + r.stderr);
     const row = envelope(r.stdout, "index", true).results[0] as any;
-    assert.equal(row.coverage.identity.parser.modulePath, join(realPi, "dist", "index.js"));
+    assert.equal(row.coverage.identity.parser.modulePath, join(i === 0 ? adjacentPi : realPi, "dist", "index.js"));
     if (i === 0) assert.equal(existsSync(marker), false);
     else assert.equal(readFileSync(marker, "utf8"), "called\n");
   }

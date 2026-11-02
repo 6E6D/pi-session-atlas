@@ -1,5 +1,6 @@
 import { AtlasQueryError } from "./query-db.ts";
 import { CacheError } from "./cache.ts";
+import { HostConfigError } from "./config.ts";
 import { PiPackageResolutionError } from "./resolve-pi.ts";
 
 export class UsageError extends Error {
@@ -25,6 +26,6 @@ export function failureFor(error: unknown): { exitCode: 1 | 2; error: ErrorDetai
   }
   return {
     exitCode: 2,
-    error: { code: error instanceof AtlasQueryError || error instanceof CacheError ? error.code : "OPERATION_FAILED", message },
+    error: { code: error instanceof AtlasQueryError || error instanceof CacheError || error instanceof HostConfigError ? error.code : "OPERATION_FAILED", message },
   };
 }

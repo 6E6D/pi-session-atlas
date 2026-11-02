@@ -1,7 +1,8 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cpSync, lstatSync, mkdirSync, readlinkSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
-import { dirname, isAbsolute, join, sep } from "node:path";
+import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
+import { createRequire } from "node:module";
+import { dirname, isAbsolute, join, relative, sep } from "node:path";
 import { projectRoot } from "./prepublication-support.ts";
 
 export const PI_NAME = "@earendil-works/pi-coding-agent";
@@ -35,8 +36,33 @@ export function copyPi(source: string, destination: string) {
       else assert.ok(s.isFile(), p);
     }
   }
-  inspect(root); mkdirSync(dirname(destination), { recursive: true });
-  cpSync(root, destination, { recursive: true, verbatimSymlinks: true });
+  // Newer Pi installs hoist dependencies beside the scoped package. Copy the
+  // installed runtime dependency closure, preserving its layout, not just Pi's
+  // leaf directory. No downloads, links to live packages, or dev dependencies.
+  const modules = dirname(dirname(root));
+  const targetModules = dirname(dirname(destination));
+  assert.equal(JSON.parse(readFileSync(join(root, "package.json"), "utf8")).name, PI_NAME);
+  const seen = new Set<string>();
+  function copyPackage(sourceRoot: string) {
+    const canonical = realpathSync(sourceRoot);
+    if (seen.has(canonical)) return;
+    assert.ok(canonical.startsWith(modules + sep), canonical);
+    seen.add(canonical); inspect(canonical);
+    const target = join(targetModules, relative(modules, canonical));
+    mkdirSync(dirname(target), { recursive: true });
+    cpSync(canonical, target, { recursive: true, verbatimSymlinks: true });
+    const metadata = JSON.parse(readFileSync(join(canonical, "package.json"), "utf8"));
+    const loader = createRequire(join(canonical, "package.json"));
+    const optional = metadata.optionalDependencies ?? {};
+    for (const name of Object.keys({ ...metadata.dependencies, ...optional })) {
+      const candidates = loader.resolve.paths(name) ?? [];
+      const selected = candidates.map(base => join(base, name)).find(path => existsSync(join(path, "package.json")));
+      if (!selected && Object.hasOwn(optional, name)) continue;
+      assert.ok(selected, `missing installed runtime dependency ${name}`);
+      copyPackage(selected);
+    }
+  }
+  copyPackage(root);
 }
 export function shellQuote(text: string) { return `'${text.replaceAll("'", "'\\''")}'`; }
 export function npmProbe(root: string, body: string) {

@@ -48,7 +48,7 @@ export async function indexSessions(options: IndexOptions, injectedParser?: PiPa
   if (options.rebind && !options.rebuild) throw new UsageError("--rebind requires --rebuild and an explicit source root");
   const toolHeadBytes = options.toolHeadBytes ?? DEFAULT_TOOL_HEAD_BYTES;
   if (!Number.isInteger(toolHeadBytes) || toolHeadBytes < 0 || toolHeadBytes > 2_147_483_647) throw new UsageError("invalid toolHeadBytes");
-  const parser = injectedParser ?? (await resolvePiParser()).api;
+  const parser = injectedParser ?? (await resolvePiParser(options.piPackagePath)).api;
   const declared = injectedParser ? options.parserIdentity ?? parserIdentityFor(parser) : parserIdentityFor(parser);
   if (!declared) throw new CacheError("injected parser identity is required", "CACHE_IDENTITY_INVALID");
   const sessionsDirectory = realpathSync(resolve(options.sessionsDirectory));

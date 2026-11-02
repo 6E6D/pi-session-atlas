@@ -36,7 +36,7 @@ export async function showSession(
   sessionReference: string,
   entryReference: string | undefined,
   context: number,
-  options: { parser?: PiParserApi } = {},
+  options: { parser?: PiParserApi; piPackagePath?: string } = {},
 ): Promise<ShowResult> {
   if (!Number.isInteger(context) || context < 0 || context > 100) throw new UsageError("context must be an integer from 0 to 100");
   const session = resolveSession(database, sessionReference);

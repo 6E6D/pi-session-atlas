@@ -29,6 +29,27 @@ node "$ATLAS" --help
 If the package is incomplete, stop and report it. Do not install dependencies,
 build source, change PATH or alter Pi configuration as an automatic repair.
 
+## Host configuration
+
+Before the first query in a task, run `node "$ATLAS" config show --json`.
+If using `--config PATH` or explicit path overrides, include the same choices
+in this inspection and subsequent commands. Inspect the effective paths and
+origins; use the reported `settings.cachePath.value` as `$DB` only after confirming the
+task's permitted scope. Configuration is not data-access authority.
+
+Atlas reads optional `${XDG_CONFIG_HOME:-~/.config}/session-atlas/host.json`.
+An explicit `--config PATH` selects a required file. Command options override
+existing ATLAS environment settings, which override host JSON and built-in
+defaults. The packaged `../../examples/host.example.json` contains placeholders,
+not an installed host configuration. Keep actual host values outside releases.
+
+Missing optional configuration leaves existing defaults in effect; it does
+not establish that the default cache is maintained or authorised. If effective
+settings conflict with the task or known deployment, or configuration is
+invalid/unreadable, stop and report rather than choosing another cache or
+repairing configuration. `config show` does not read sessions/caches or import
+Pi. It does not refresh, rebuild, grant permissions or validate cache freshness.
+
 ## Authority and freshness
 
 1. Establish the task's permitted archive/cache scope under the active user

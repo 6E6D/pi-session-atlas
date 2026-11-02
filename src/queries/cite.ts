@@ -52,10 +52,11 @@ export async function verifyCitation(
   database: DatabaseSync,
   sessionReference: string,
   entryReference?: string,
+  options: { piPackagePath?: string } = {},
 ): Promise<CiteResult & { verification: SourceEvidence }> {
   const result = cite(database, sessionReference, entryReference);
   const session = resolveSession(database, result.sessionUuid);
-  const verification = await inspectSource(database, session, result.entryId ?? undefined);
+  const verification = await inspectSource(database, session, result.entryId ?? undefined, undefined, options);
   if (verification.indexState !== "metadata-match") {
     throw new AtlasQueryError(`current source metadata differs from the index or has no catalog entry: ${session.file}; inspect the source and refresh only if appropriate`, "SOURCE_CHANGED");
   }

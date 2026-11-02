@@ -20,11 +20,33 @@ function command(executable: string, args: string[], cwd: string, env: NodeJS.Pr
   return result;
 }
 
+function assertSkillResources(root: string, text = readFileSync(join(root, "skills/session-atlas/SKILL.md"), "utf8")) {
+  const skillDirectory = join(root, "skills/session-atlas");
+  const executable = /Resolve `([^`]+)` relative/.exec(text)?.[1];
+  const example = /The packaged `([^`]+)` contains placeholders/.exec(text)?.[1];
+  assert.ok(executable); assert.ok(example);
+  for (const [reference, target] of [[executable, "bin/atlas"], [example, "examples/host.example.json"]]) {
+    const resolved = resolve(skillDirectory, reference!);
+    assert.equal(resolved, join(root, target!), `skill-relative resource: ${reference}`);
+    assert.ok(existsSync(resolved));
+  }
+  assert.equal(JSON.parse(readFileSync(resolve(skillDirectory, example), "utf8")).schemaVersion, 1);
+}
+
+test("skill-relative executable and example paths resolve; package-root example regression is rejected", () => {
+  const text = readFileSync(join(projectRoot, "skills/session-atlas/SKILL.md"), "utf8");
+  assertSkillResources(projectRoot, text);
+  assert.throws(() => assertSkillResources(projectRoot, text.replace("`../../examples/host.example.json`", "`examples/host.example.json`")), /skill-relative resource/);
+});
+
 function copyBuildInputs(destination: string) {
   mkdirSync(destination, { recursive: true, mode: 0o700 });
   for (const name of ["src", "scripts", "package.json", "tsconfig.json", "tsconfig.build.json"]) {
     cpSync(join(projectRoot, name), join(destination, name), { recursive: true });
   }
+  // A clean source build still needs its pinned local compiler and Node types.
+  // Copy existing development dependencies offline; never rely on global types.
+  cpSync(join(projectRoot, "node_modules"), join(destination, "node_modules"), { recursive: true, verbatimSymlinks: true });
 }
 
 test("clean builds emit identical JavaScript with a complete rewritten module set and no source maps", (t) => {
@@ -65,7 +87,7 @@ test("actual allowlisted tarball installs offline without Pi/compiler dependenci
   const a = await createArchive(t); const source = join(a.sessionsDirectory, "fixture.jsonl"); const before = fingerprint(source);
   const packed = command("npm", ["pack", "--offline", "--ignore-scripts", "--json", "--pack-destination", a.root], projectRoot, a.env);
   const details = JSON.parse(packed.stdout)[0] as { filename: string; files: { path: string }[]; bundled: string[] };
-  const expected = ["LICENSE", "README.md", "package.json", "bin/atlas", "skills/session-atlas/SKILL.md", ...files(join(projectRoot, "dist")).map((p) => `dist/${p}`)].sort();
+  const expected = ["LICENSE", "README.md", "package.json", "bin/atlas", "skills/session-atlas/SKILL.md", "examples/host.example.json", ...files(join(projectRoot, "dist")).map((p) => `dist/${p}`)].sort();
   assert.deepEqual(details.files.map((v) => v.path).sort(), expected); assert.deepEqual(details.bundled, []);
   const tarball = join(a.root, details.filename);
   const listing = command("tar", ["-tzf", tarball], a.root, a.env).stdout.trim().split("\n").sort();
@@ -79,12 +101,13 @@ test("actual allowlisted tarball installs offline without Pi/compiler dependenci
     assert.equal(existsSync(join(installed, name)), false, name);
   }
   for (const path of expected) assert.equal(fingerprint(join(installed, path)).sha256, fingerprint(join(projectRoot, path)).sha256, path);
+  assertSkillResources(installed);
   const skill = join(installed, "skills", "session-atlas", "SKILL.md");
   const executable = resolve(dirname(skill), "../../bin/atlas");
   assert.equal(relative(installed, executable), "bin/atlas");
   assert.match(command(process.execPath, [executable, "--help"], a.root, a.env).stdout, /Usage:/);
   for (const args of [
-    ["index"], ["sessions"], ["search", "Atlas", "--exact"],
+    ["config", "show"], ["index"], ["sessions"], ["search", "Atlas", "--exact"],
     ["prompts", "--since", "2026-08-23", "--cwd", "/workspace/*", "--limit", "1"],
     ["report", "cost", "--by", "day", "--until", "2026-08-23", "--cwd", "/workspace/*", "--model", "test-model", "--provider", "test-provider"],
     ["show", "fixture-session-alpha", "00000001", "--context", "0"],

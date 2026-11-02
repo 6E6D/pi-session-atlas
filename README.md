@@ -1,206 +1,118 @@
-# Session Atlas: learn valuable lessons from your Pi session history
+# Session Atlas: learn from your Pi session history
 
-A lot of useful work happens inside an AI session. Thoughtful search and analysis can uncover lessons, recurring problems and ideas for what to build next. Session Atlas helps you discover and explore that material.
+**Session Atlas gives [Pi](https://pi.dev) a structured way to find earlier work, investigate recurring problems and return to exact session entries.** It combines a local command-line tool with a Pi skill. Atlas makes no LLM or network calls and never writes your source sessions.
 
-**Session Atlas gives [Pi](https://pi.dev) a structured way to search earlier sessions, trace files and commands, and return to exact entries.** It’s a Pi package with a local command-line tool and an agent skill. Atlas itself makes no LLM calls and leaves your source sessions unchanged.
-
-I built it to recover earlier work, investigate recurring errors and bugs, and develop ideas for features and improvements. Session history becomes material to learn from, not just a record of what happened.
+Use it when a question spans conversations: where a file was discussed, which attempts failed, what was decided, or which ideas deserve another look. Atlas retrieves the evidence; you and Pi interpret it. It does not automatically diagnose problems or decide what to build.
 
 ![Session Atlas searches earlier Pi sessions and returns relevant entries; analysis and judgment follow retrieval.](docs/assets/session-atlas-overview.png)
 
-## Why this exists
+## Install
 
-Pi can already read its session files. If you know which conversation you need, that may be enough.
+Download `session-atlas-0.5.1.tgz` and `SHA256SUMS` from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). This is a public preview, not an npm-registry release.
 
-The harder questions span sessions: which attempts failed, where a file was discussed, which command worked, or whether the same problem keeps coming back. Atlas indexes a selected archive and provides queries for those tasks. You and Pi can inspect the relevant entries rather than repeatedly working through the raw files.
+**Requirements:** Node 24.15.0 or a later Node 24 patch. Indexing requires an already installed, trusted Pi parser. The 0.5.1 source passes 198 synthetic tests, including offline installation and native skill discovery, on Linux x64 with Node 24.15.0 and Pi 1.4.0. Other Pi versions and operating systems need their own validation.
 
-**Atlas finds the evidence. You and Pi make sense of it.** It does not automatically diagnose bugs or decide which features to build.
+In the download directory, verify the checksum, then install into a new, empty directory. Replace the placeholder paths:
 
-## Try it
+```bash
+sha256sum -c SHA256SUMS
+npm install --offline --ignore-scripts --omit=dev --no-audit --no-fund \
+  --prefix /absolute/path/to/atlas-install \
+  /absolute/path/to/session-atlas-0.5.1.tgz
 
-After installing and indexing an archive using the steps below, ask Pi:
+pi install /absolute/path/to/atlas-install/node_modules/session-atlas
+```
+
+The last command registers the skill in your user Pi settings; add `-l` for project settings instead. Registration is optional for CLI-only use. Reload Pi or start a new session, and verify that the intended `session-atlas` skill is loaded rather than an older same-name copy.
+
+## Configure and index
+
+Keep host settings outside versioned installations so direct commands, the skill and scheduled jobs select the same cache and parser.
+
+Create `${XDG_CONFIG_HOME:-~/.config}/session-atlas/host.json` with the following structure. Replace every placeholder with an absolute path; JSON values do not expand `~` or environment variables. Use a private directory and file permissions of `0600`.
+
+```json
+{
+  "schemaVersion": 1,
+  "cachePath": "/absolute/path/to/private-cache/atlas.db",
+  "sessionsPath": "/absolute/path/to/authorised-sessions",
+  "pathHome": "/absolute/path/to/session-owners-home",
+  "piPackagePath": "/absolute/path/to/node_modules/@earendil-works/pi-coding-agent"
+}
+```
+
+- Choose a cache outside the session directory. Indexing reads the **whole selected archive**, not just one project.
+- `pathHome` is the home used to interpret recorded `~` paths, normally your home directory.
+- `piPackagePath` selects executable parser code, so use a trusted Pi installation. Atlas does not download Pi.
+- If upgrading, preserve your existing cache, archive, home and parser selections rather than guessing new ones.
+
+Inspect the effective settings before the first index:
+
+```bash
+ATLAS="/absolute/path/to/atlas-install/node_modules/session-atlas/bin/atlas"
+node "$ATLAS" config show --json
+node "$ATLAS" index --json
+```
+
+Run indexing only after approving access to that archive and writes to its cache. Check the result for warnings or failures. Keep `ATLAS` set in the shell used for the examples below.
+
+`config show` reports paths and their origins without opening sessions/caches or importing Pi. Precedence is **command options → existing ATLAS environment settings → host JSON → built-in defaults**. An absent default file retains legacy defaults, which may not point to your maintained cache. Invalid configuration fails rather than selecting another cache.
+
+For a non-default file, add `--config /absolute/path/to/host.json` to every command. An explicitly selected file must exist. Atlas never creates host configuration automatically.
+
+## Use it
+
+After indexing, ask Pi:
 
 > Use Session Atlas to investigate recurring errors in this project's sessions. Show the relevant entries, distinguish repeated symptoms from possible causes, and suggest improvements. Don't change any files.
 
-Or use the CLI directly. With `ATLAS` and `DB` set as below:
+Or use the CLI:
 
 ```bash
-# Find a previous discussion
-node "$ATLAS" search 'release notes' --db "$DB" --limit 5
-
-# Follow references to a file
-node "$ATLAS" trace --file notes.md --db "$DB" --limit 5
-
-# Review recorded errors grouped by signature
-node "$ATLAS" report errors --by signature --db "$DB"
+node "$ATLAS" search 'release notes' --limit 5 --json
+node "$ATLAS" show SESSION ENTRY --context 2 --json
 ```
 
-Search and trace return matching session entries. The error report groups recorded errors for further investigation. An empty result is possible; none of these commands invents an answer when the archive has no match.
-
-## Install and index
-
-Use the reviewed `session-atlas-0.4.1.tgz` artifact and its checksum file when available from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). Version 0.4.1 is a maintenance preview with clearer cache-identity mismatch diagnostics and a concise cache-coverage check in the skill. The cache format is unchanged from 0.4.0. It is not an npm-registry release.
-
-**Requirements:** Linux x64, Node 24.15.0 or a later Node 24 patch, and a trusted compatible Pi installation. The original compatibility baseline is Pi 0.85.1. Later checks cover synthetic Pi 0.87.0 compatibility and native skill discovery on Pi 0.87.1; they do not establish every workflow on those versions. macOS and Windows are not validated.
-
-The 0.4.0 implementation also passes synthetic tests and isolated native skill discovery on Pi 1.2.0 with Node 24.15.0 on Linux x64. These checks are not a guarantee for every Pi version, workflow or deployment target.
-
-### 1. Install the reviewed artifact
-
-Verify the download against the release checksum. Replace the paths below with your downloaded artifact and a new, empty installation directory:
-
-```bash
-npm install --offline --ignore-scripts --omit=dev --no-audit --no-fund \
-  --prefix /absolute/path/to/new-local-tools \
-  /absolute/path/to/session-atlas-0.4.1.tgz
-```
-
-### 2. Make the skill available to Pi
-
-```bash
-pi install /absolute/path/to/new-local-tools/node_modules/session-atlas
-```
-
-This registers the package in your user Pi settings; add `-l` for project settings instead. Reload Pi or start a new session and verify that the intended `session-atlas` skill is loaded. Resolve any older same-name skill explicitly. Registration is optional for CLI-only use.
-
-### 3. Index the sessions you want to search
-
-Choose a session directory you are authorised to read and a new private cache path outside it. Indexing reads the whole selected directory, not just the project you intend to query.
-
-```bash
-ATLAS="/absolute/path/to/new-local-tools/node_modules/session-atlas/bin/atlas"
-DB="/absolute/path/to/private-cache/atlas.db"
-SESSIONS="/absolute/path/to/authorised-sessions"
-
-node "$ATLAS" index --db "$DB" --sessions-dir "$SESSIONS" --json
-```
-
-Reuse those paths in the same shell for the examples. Check the returned coverage and warnings before treating a scan as complete.
-
-### Keep the index current: two complementary options
-
-**Periodic indexing.** Schedule the same index command with your operating system's scheduler, such as a systemd user timer on Linux. An hourly run is one option: it incrementally indexes changed sessions so recent work is usually available without a manual refresh. Scheduling is a separate setup step, not a service installed by Atlas. Give the job explicit session and cache paths and keep logs free of session content. A failed run should report the error, not automatically rebuild or change the selected archive.
-
-**On-demand indexing through Pi.** The included skill tells Pi to inspect the cache's scan time, coverage and warnings. When a refresh is needed, Pi can run the index command once for the task if you have approved access to the complete selected session directory and writes to that cache, either for this request or under an existing standing permission. Otherwise it should ask. The skill guides this behaviour; it is not an automatic hook or a permission grant.
-
-For example:
-
-> Refresh the Session Atlas index for the session directory and cache I approved, then look for recurring errors in this project's recent sessions.
-
-Use both approaches if helpful: a timer for routine updates, and a task-specific refresh for work since the last run. Queries themselves do not trigger indexing. Rebuilds and changes to the archive scope remain separate decisions.
-
-#### Check scheduled refreshes
-
-Scheduled jobs may not inherit your shell environment. Set `ATLAS_PI_PACKAGE` to a trusted Pi package directory and configure the Node executable or `PATH` explicitly. Use the same parser for manual and scheduled indexing.
-
-An active timer does not mean indexing succeeded. Check the service result, logs and query JSON’s `cache.lastSuccessfulScan`. With systemd, use your own unit name:
-
-```bash
-systemctl --user status atlas-index.service
-journalctl --user -u atlas-index.service --since today
-```
-
-Atlas does not install this service. Journal logging records failures but does not send alerts.
-
-After changing Pi’s version or location, check that indexing still works. If Atlas reports an identity mismatch, review the [cache safeguards](#limits-and-privacy) before rebuilding. Never add `--rebuild` to a routine timer. After repair, verify both a manual refresh and the next scheduled run.
-
-## What you can investigate
+Replace `SESSION` and `ENTRY` with returned identifiers, and example paths/dates with your own. The table below omits the `node "$ATLAS"` prefix. Add `--json` for structured results; use each command's `--help` for its supported filters.
 
 | Task | Command |
 |---|---|
-| Find a discussion | `search 'release notes'` |
-| Review recent requests without a keyword | `prompts --cwd "$SCOPE" --since "$START" --until "$END" --limit 20` |
-| Match an exact phrase | `search 'exact phrase' --exact` |
-| Follow file references | `trace --file notes.md` |
-| Find recorded commands | `cmd 'test runner'` |
-| Read a matching entry in context | `show SESSION ENTRY --context 2` |
-| Get a source-checked citation | `cite SESSION ENTRY --verify-source` |
-| Inspect unfinished-work candidates | `unfinished` |
-| Inspect abandoned branches | `branches --abandoned` |
-| Review recorded errors | `report errors --by signature` |
-| Review recorded costs | `report cost --by model` |
-| Review costs by day in a project scope | `report cost --by day --cwd "$SCOPE" --since "$START" --until "$END"` |
-| Search context-edit records | `search 'query' --kind context_edit` |
+| Review recent requests in a project | `prompts --cwd /absolute/project/path --since YYYY-MM-DD --limit 20` |
+| Follow file references | `trace --file notes.md --limit 10` |
+| Find failed commands | `cmd 'npm test' --failed --limit 10` |
+| Cite an entry and check its source identity | `cite SESSION ENTRY --verify-source` |
+| Inspect unfinished-work candidates | `unfinished --limit 10` |
+| Inspect abandoned branches | `branches --abandoned --session SESSION --limit 10` |
+| Group recorded errors | `report errors --by signature` |
+| Review recorded costs by day and project | `report cost --by day --cwd /absolute/project/path --since YYYY-MM-DD` |
 
-Run commands through `node "$ATLAS"`, add `--db "$DB"`, and replace `SESSION` and `ENTRY` with returned identifiers. Add `--json` for structured output or use `--help` for options. Default search uses FTS token matching; use `--exact` for case-sensitive substrings or `--fts` for expressions such as `release OR rollout`.
+Search normally matches FTS tokens. Use `--exact` for case-sensitive substrings or `--fts` for expressions such as `release OR rollout`. Dates use UTC unless a timestamp supplies an explicit timezone. Filters vary by command and are not access controls; commands without project scoping can return evidence from across the indexed archive.
 
-## Recent-request reviews and scoped costs
+## Keep the index current
 
-`prompts` lists indexed user-role messages without a search term. It requires
-`--since` and at least one of `--cwd`, `--dir` or `--session`; these selectors
-are not access controls. For an already authorised scope and explicit window:
+Queries never refresh the index. Two complementary options are available:
 
-```bash
-node "$ATLAS" prompts --db "$DB" --cwd "$SCOPE" \
-  --since "$START" --until "$END" --limit 20 --json
-node "$ATLAS" report cost --db "$DB" --by day --cwd "$SCOPE" \
-  --since "$START" --until "$END" --model "$MODEL" --provider "$PROVIDER" --json
-```
+- **Periodic:** schedule the index command with your operating system, for example an hourly systemd user timer. Set the Node executable or `PATH` explicitly and use `index --config /absolute/path/to/host.json` so the job requires your chosen configuration. Check for environment overrides with `config show` under the scheduled environment. Atlas installs no service or timer.
+- **On demand:** ask Pi to refresh before investigating recent work. The skill checks cache coverage and may refresh only when your approval covers the complete archive and cache; otherwise it asks. Skill guidance is not an automatic hook or a permission grant.
 
-Set the variables to reviewed values. Omit the model/provider options when
-all recorded attribution is wanted. Model/provider IDs are exact and
-case-sensitive. Repeated values within one category combine with OR; distinct
-categories combine with AND. Filters apply to each usage entry, including
-standalone usage, consistently across totals, groups and top-session amounts.
-Daily groups use UTC entry dates, not session-start dates. Unattributed usage
-is not assigned to a guessed model or provider. Cwd is recorded session
-location, not a verified project assignment; recorded costs are not invoices.
-
-Prompt results are newest-first, with session UUID and entry ID tie-breaks.
-Defaults are 20 messages and 1,200 Unicode code points per excerpt; permitted
-limits are 1–100 messages and 1–2,000 code points through `--max-chars`.
-Long messages stay eligible and are visibly truncated. Entries without indexed
-text are labelled, not silently dropped. Counts and `hasMore` describe the
-indexed selection, not all human requests or a representative sample. Results
-are historical across branches; observed branch membership is not proof of
-current model visibility or accepted intent. The command returns cited text
-excerpts, not raw entries or image payloads, and never refreshes the cache.
-
-A user-role message can be an agent-authored task or quoted material. Origin
-must be assessed before inferring human preferences. Directory depth and
-`parentSession` alone are not subagent classifiers. The packaged skill uses
-bounded retrieval and surrounding evidence to propose responses to recurring
-friction, including editing or removing instructions, software fixes or no
-change. Semantic judgment stays outside the deterministic CLI; there is no
-automatic instruction editing, memory promotion or background review.
-
-
-## How it works
-
-```text
-Selected Pi sessions → local index → search, trace and reports
-                                          ↓
-                              original entries and citations
-                                          ↓
-                              your investigation with Pi
-```
-
-Atlas stores a derived SQLite index separately from the original sessions. Queries return recorded evidence and information about index coverage. The included skill guides Pi in using the CLI. There is no runtime extension, bundled model, vector service or background daemon.
+An active timer is not proof of a successful scan. Check service logs, failures and query JSON's `cache.lastSuccessfulScan`. After changing Pi or repairing a job, verify a manual refresh and the next scheduled run. Logging is not notification. Never put `--rebuild` in a routine timer.
 
 ## Limits and privacy
 
-- **The archive is evidence, not ground truth.** Old answers and commands may be wrong or unsafe. File references do not necessarily explain why a change was made. Unfinished-work results are candidates, not obligations.
-- **The index can be stale or incomplete.** Missing sessions cannot be recovered from citations. Source checking verifies identity and indexed size/mtime, not content hashes or factual correctness. Queries do not change logical Atlas records, but SQLite may coordinate reads through WAL/SHM metadata.
-- **History is not an exact model-context replay.** Context edits are separately searchable; omitted originals remain in history. Atlas does not reconstruct every provider request.
-- **Recorded cost is not a verified bill.** Usage reports include recorded standalone usage, but do not reconcile provider invoices.
-- **Local retrieval does not make every later use local.** Atlas makes no LLM calls. If Pi sends retrieved text to a model, that follows your Pi configuration and data permissions.
-- **Sessions and caches can contain secrets.** There is no automatic redaction or per-project access-control layer. Filters are not security boundaries. `show --context 0 --json` exposes full raw entries and should not be used for routine browsing or public examples.
-
-Version 0.4.1 retains schema 4 / extraction 4. This patch alone does not require a cache rebuild. Older caches or changed parser identities need a deliberate rebuild or a new cache. Preserve the old cache if you need it; do not force a refused target, delete locks or relabel old data. Atlas refuses unsafe or unrecognised cache targets rather than repairing them automatically.
-
-`CACHE_IDENTITY_MISMATCH` now lists changed fields and their stored/requested values. A Pi package-version change can block incremental refresh even when its parser-code fingerprint is unchanged. This is not evidence of corruption. The refusal and explicit rebuild gates are unchanged.
+- **History is evidence, not ground truth.** Old instructions may be unsafe; user-role text is not proof of human authorship. Unfinished-work results are candidates, recorded costs are not invoices, and context-edit history does not reconstruct exactly what a model saw.
+- **Coverage matters.** An empty result from a stale or incomplete cache does not prove absence. Source verification checks identity and indexed size/mtime, not content hashes or factual correctness. Queries leave logical Atlas records unchanged, though SQLite may update WAL/SHM metadata.
+- **Keep private data private.** Sessions and caches can contain secrets. There is no automatic redaction or per-project access isolation. `show --context 0 --json` exposes full raw entries; avoid it for routine browsing. If Pi sends retrieved text to a model, that follows your Pi configuration and permissions, not Atlas's local-only behaviour.
+- **Do not force cache repairs.** Version 0.5.1 retains schema 4 / extraction 4 and does not itself require reindexing. Changed parser identities, older cache formats or archive bindings can require a deliberate rebuild or a new cache. `CACHE_IDENTITY_MISMATCH` names changed fields; it does not mean corruption. Preserve old data, and do not delete locks, relabel caches or bypass refusals.
 
 ## Development and feedback
 
-From a reviewed source checkout with the pinned development toolchain available:
+From a source checkout with the pinned development toolchain available:
 
 ```bash
 npm run check     # typecheck, build and synthetic tests
 npm pack          # prepack checks and runtime artifact
 ```
 
-Useful feedback starts with a question you tried to answer and what happened. For bugs, provide a small synthetic reproduction, the Atlas/Pi/Node versions and sanitised diagnostics. **Do not upload your session archive or cache.** Discuss substantial changes first; there is no support SLA or stable internal library API.
+Report bugs with a small synthetic reproduction, Atlas/Pi/Node versions and sanitised diagnostics. **Do not upload session archives or caches.** There is no support SLA or stable internal library API.
 
-## Licence
-
-MIT, copyright 2026 Nima Maleki. See [LICENSE](LICENSE). The licence covers the distributed software and documentation, not your session data.
+MIT, copyright 2026 Nima Maleki. See [LICENSE](LICENSE). The licence covers distributed software and documentation, not your session data.

@@ -1,9 +1,8 @@
 #!/usr/bin/env node
-import { homedir } from "node:os";
+import { resolveHostConfig, type EffectiveConfig } from "./config.ts";
 import { cacheCoverage } from "./cache.ts";
 import type { CacheCoverage } from "./types.ts";
 let queryCoverage: CacheCoverage | undefined;
-import { join, resolve } from "node:path";
 import type { DatabaseSync } from "node:sqlite";
 
 import { failureFor, UsageError, type ErrorDetail } from "./errors.ts";
@@ -26,6 +25,8 @@ import { sourceTimestamp } from "./timestamps.ts";
 const HELP = `Session Atlas — deterministic local index and query CLI over Pi sessions
 
 Usage:
+  atlas config show [--config PATH] [--db PATH] [--sessions-dir PATH]
+                    [--path-home PATH] [--json]
   atlas index [--rebuild [--rebind]] [--tool-head-bytes N] [--sessions-dir PATH]
               [--path-home PATH]
   atlas search <query> [--kind KIND] [--exact | --fts] [--dir GLOB] [--cwd GLOB]
@@ -44,7 +45,17 @@ Usage:
   atlas report errors [--by tool|signature] [--since DATE]
   atlas cite <session> [entry] [--verify-source]
 
-Global query options: --db PATH, --json, --limit N
+Global query options: --config PATH, --db PATH, --json, --limit N
+Index also accepts --config PATH. Options follow the command.
+
+Host configuration:
+  Optional default: $XDG_CONFIG_HOME/session-atlas/host.json, or
+  ~/.config/session-atlas/host.json. --config explicitly selects a required file.
+  Precedence: command options > existing ATLAS_* environment > host JSON > defaults.
+  config show reports effective paths and origins, without reading sessions/caches
+  or importing Pi. A null piPackagePath means deferred built-in parser discovery.
+  Invalid/unreadable configuration fails closed; no cache fallback or repair.
+  Configuration selects locations, not access, refresh or rebuild authority.
 
 Search modes (pre-1.0 compatibility change):
   Default: whitespace-separated literal chunks, quoted and joined with AND.
@@ -150,6 +161,7 @@ interface ParsedOptions {
 }
 
 const COMMON_QUERY_OPTIONS: Record<string, OptionSpec> = {
+  "--config": { kind: "string" },
   "--db": { kind: "string" },
   "--json": { kind: "boolean" },
   "--limit": { kind: "string" },
@@ -229,9 +241,26 @@ function integerOption(
   return value;
 }
 
-function databasePath(parsed: ParsedOptions): string {
-  const home = resolve(process.env.ATLAS_HOME ?? join(homedir(), ".pi", "agent", "atlas"));
-  return resolve(stringOption(parsed, "--db") ?? join(home, "atlas.db"));
+function configuration(parsed: ParsedOptions): EffectiveConfig {
+  return resolveHostConfig({
+    configPath: stringOption(parsed, "--config"),
+    cachePath: stringOption(parsed, "--db"),
+    sessionsPath: stringOption(parsed, "--sessions-dir"),
+    pathHome: stringOption(parsed, "--path-home"),
+  });
+}
+
+function runConfig(args: string[]): CommandOutcome {
+  const parsed = parseOptions(args, {
+    "--config": { kind: "string" }, "--db": { kind: "string" },
+    "--sessions-dir": { kind: "string" }, "--path-home": { kind: "string" },
+    "--json": { kind: "boolean" },
+  });
+  if (booleanOption(parsed, "--help")) return { results: [], ok: true, json: false, help: true };
+  if (parsed.positionals.length !== 1 || parsed.positionals[0] !== "show") {
+    throw new UsageError("config requires 'show'");
+  }
+  return { results: [configuration(parsed)], ok: true, json: booleanOption(parsed, "--json") };
 }
 
 function dateBound(value: string | undefined, endOfDay: boolean): string | undefined {
@@ -265,6 +294,10 @@ function printCacheNote(cache: CacheCoverage | null | undefined): void {
 }
 
 function printHuman(command: string, results: unknown[]): void {
+  if (command === "config") {
+    writeStdout(`${JSON.stringify(results[0], null, 2)}\n`);
+    return;
+  }
   if (command === "index") {
     const result = results[0] as Record<string, unknown>;
     printCacheNote(result.coverage as CacheCoverage | null);
@@ -358,6 +391,7 @@ function printHuman(command: string, results: unknown[]): void {
 
 async function runIndex(args: string[]): Promise<CommandOutcome> {
   const parsed = parseOptions(args, {
+    "--config": { kind: "string" },
     "--rebuild": { kind: "boolean" },
     "--rebind": { kind: "boolean" },
     "--tool-head-bytes": { kind: "string" },
@@ -371,14 +405,12 @@ async function runIndex(args: string[]): Promise<CommandOutcome> {
   if (booleanOption(parsed, "--rebind") && (!booleanOption(parsed, "--rebuild") || !stringOption(parsed, "--sessions-dir"))) {
     throw new UsageError("--rebind requires --rebuild and an explicit --sessions-dir PATH");
   }
+  const config = configuration(parsed).settings;
   const result = await indexSessions({
-    databasePath: databasePath(parsed),
-    sessionsDirectory: resolve(
-      stringOption(parsed, "--sessions-dir") ??
-        process.env.ATLAS_SESSIONS_DIR ??
-        join(homedir(), ".pi", "agent", "sessions"),
-    ),
-    pathHome: resolve(stringOption(parsed, "--path-home") ?? homedir()),
+    databasePath: config.cachePath.value!,
+    sessionsDirectory: config.sessionsPath.value!,
+    pathHome: config.pathHome.value!,
+    piPackagePath: config.piPackagePath.value ?? undefined,
     rebuild: booleanOption(parsed, "--rebuild"),
     rebind: booleanOption(parsed, "--rebind"),
     toolHeadBytes: integerOption(parsed, "--tool-head-bytes", DEFAULT_TOOL_HEAD_BYTES),
@@ -458,8 +490,10 @@ async function runQueryCommand(
   const top = integerOption(parsed, "--top", 10, 1, 1_000);
   // Validate usage before opening a cache. A missing DB must not hide bad args.
   let database: DatabaseSync | undefined;
+  let config: EffectiveConfig | undefined;
+  const getConfig = (): EffectiveConfig => config ??= configuration(parsed);
   const getDatabase = (): DatabaseSync => {
-    if (!database) { database = openQueryDatabase(databasePath(parsed)); queryCoverage = cacheCoverage(database); }
+    if (!database) { database = openQueryDatabase(getConfig().settings.cachePath.value!); queryCoverage = cacheCoverage(database); }
     return database;
   };
   try {
@@ -521,6 +555,7 @@ async function runQueryCommand(
         parsed.positionals[0]!,
         parsed.positionals[1],
         context,
+        { piPackagePath: getConfig().settings.piPackagePath.value ?? undefined },
       );
       return { results: [result], ok: true, json };
     }
@@ -618,7 +653,8 @@ async function runQueryCommand(
       }
       return {
         results: [booleanOption(parsed, "--verify-source")
-          ? await verifyCitation(getDatabase(), parsed.positionals[0]!, parsed.positionals[1])
+          ? await verifyCitation(getDatabase(), parsed.positionals[0]!, parsed.positionals[1],
+            { piPackagePath: getConfig().settings.piPackagePath.value ?? undefined })
           : cite(getDatabase(), parsed.positionals[0]!, parsed.positionals[1])],
         ok: true,
         json,
@@ -639,7 +675,7 @@ async function main(): Promise<void> {
   }
   const command = args.shift()!;
   const outcome =
-    command === "index"
+    command === "config" ? runConfig(args) : command === "index"
       ? await runIndex(args)
       : await runQueryCommand(command, args);
   if (!outcome.ok) process.exitCode = 2;

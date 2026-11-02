@@ -130,6 +130,8 @@ export interface CatalogRecord {
 }
 
 export interface IndexOptions {
+  /** CLI-resolved trusted parser selection; undefined retains existing discovery. */
+  piPackagePath?: string;
   databasePath: string;
   sessionsDirectory: string;
   /** Home used only to interpret recorded `~` and `~/...` tool paths. */

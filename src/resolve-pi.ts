@@ -97,9 +97,8 @@ async function loadSelected(candidate: string, candidates: string[], localResolu
   }
 }
 
-export async function resolvePiParser(): Promise<ResolvedPiParser> {
+export async function resolvePiParser(explicit: string | undefined = process.env.ATLAS_PI_PACKAGE): Promise<ResolvedPiParser> {
   const candidates: string[] = [];
-  const explicit = process.env.ATLAS_PI_PACKAGE;
   if (explicit !== undefined) {
     if (!explicit.trim()) throw failure(candidates, "ATLAS_PI_PACKAGE is set but empty.");
     // Do not trim meaningful spaces from an actual filesystem path.

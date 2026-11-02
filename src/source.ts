@@ -86,7 +86,7 @@ function sourceVersion(header: SourceRecord): number {
   return version;
 }
 
-async function legacyRecords(handle: FileHandle, before: Stats, parser?: PiParserApi): Promise<{ raw: unknown[]; normalized: unknown[]; skipped: number }> {
+async function legacyRecords(handle: FileHandle, before: Stats, parser?: PiParserApi, piPackagePath?: string): Promise<{ raw: unknown[]; normalized: unknown[]; skipped: number }> {
   const limit = (): never => { throw new AtlasQueryError(`legacy source exceeds the bounded reader limit (${LEGACY_SOURCE_MAX_BYTES} bytes or ${LEGACY_SOURCE_MAX_RECORDS} parsed records); use a separately reviewed source reader`, "SOURCE_LEGACY_LIMIT"); };
   if (before.size > LEGACY_SOURCE_MAX_BYTES) limit();
   // Read at most cap + 1 bytes even if the file grows after the initial stat.
@@ -98,7 +98,7 @@ async function legacyRecords(handle: FileHandle, before: Stats, parser?: PiParse
     buffers.push(chunk);
   }
   const content = Buffer.concat(buffers).toString("utf8");
-  const api = parser ?? (await resolvePiParser()).api;
+  const api = parser ?? (await resolvePiParser(piPackagePath)).api;
   if (api.CURRENT_SESSION_VERSION !== 3) {
     throw new AtlasQueryError(`legacy display requires a Pi parser with tested session-format version 3; resolved format version ${api.CURRENT_SESSION_VERSION}`, "SOURCE_PARSER_INCOMPATIBLE");
   }
@@ -134,7 +134,7 @@ export async function inspectSource(
   session: SessionIdentity,
   targetEntryId?: string,
   visit?: (normalized: SourceRecord, raw: SourceRecord) => void,
-  options: { parser?: PiParserApi } = {},
+  options: { parser?: PiParserApi; piPackagePath?: string } = {},
 ): Promise<SourceEvidence> {
   let handle: FileHandle | undefined;
   try {
@@ -184,7 +184,7 @@ export async function inspectSource(
       visit?.(record, raw);
     };
     if (version < 3) {
-      const legacy = await legacyRecords(handle, before, options.parser);
+      const legacy = await legacyRecords(handle, before, options.parser, options.piPackagePath);
       skipped += legacy.skipped;
       legacy.normalized.forEach((record, index) => accept(record, legacy.raw[index]));
     } else {

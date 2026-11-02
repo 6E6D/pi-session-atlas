@@ -1,6 +1,6 @@
 {
   "name": "session-atlas",
-  "version": "0.4.1",
+  "version": "0.5.1",
   "private": true,
   "description": "Deterministic local index and citation CLI over Pi session archives",
   "author": "Nima Maleki",
@@ -15,6 +15,7 @@
     "dist/*.js",
     "dist/queries/*.js",
     "skills/session-atlas/SKILL.md",
+    "examples/host.example.json",
     "README.md",
     "LICENSE"
   ],
