@@ -2,7 +2,7 @@
 name: session-atlas
 description: Search and cite authorized local Pi session history. Use to find previous discussions or decisions, review recent requests and recurring problems, trace idea/file/command origins, identify unfinished or abandoned-work candidates, and report recorded costs or errors. Prefer bounded JSON retrieval over broad transcript scans.
 license: MIT
-compatibility: Complete built Session Atlas package; Node 24.15.0 or later within Node 24. Indexing and legacy normalization require a trusted compatible installed Pi parser. Compatibility baseline is Linux x64 and Pi 0.85.1; no global atlas command is required.
+compatibility: Complete built Session Atlas package; Node 24.15.0 or later within Node 24. Indexing and legacy normalization require a trusted compatible installed Pi parser. Recorded release-0.5.1 validation used Linux x64, Node 24.15.0 and Pi 1.4.0. Pi 0.85.1 was the original baseline, not a claim of support for every later Pi version; no global atlas command is required.
 ---
 
 # Session Atlas
@@ -213,6 +213,6 @@ to recorded cost totals, but these are not provider billing verification.
 
 These capabilities require extraction 4 for queries/indexing. A recognized older
 cache or changed parser identity is not permission to rebuild, rebind or scan
-its root. Preserve it and request the bounded successor-cache decision. Synthetic
-Pi 0.87.0 compatibility and acceptance of a particular installation do not
-establish compatibility or deployment acceptance on another target.
+its root. Preserve it and request the bounded successor-cache decision. The
+historical Pi 0.87.0 synthetic check and later release-0.5.1 validation on Pi
+1.4.0 do not establish compatibility or deployment acceptance on another target.
