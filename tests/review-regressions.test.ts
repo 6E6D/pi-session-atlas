@@ -12,7 +12,7 @@ import { inspectSource } from '../src/source.ts';
 import { toJsonl, type FixtureEntry } from './fixtures.ts';
 import type { CostReport } from '../src/queries/reports.ts';
 import { performance } from 'node:perf_hooks';
-import { createArchive, createSandbox, fingerprint, userSession } from './prepublication-support.ts';
+import { createArchive, createSandbox, fingerprint, userSession } from './sandbox-support.ts';
 import { copyNode, copyRuntime, npmProbe, runNode, shellQuote } from './package-support.ts';
 
 // Unit-7 review reproducers promoted into the normal acceptance suite.

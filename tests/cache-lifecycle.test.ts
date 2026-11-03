@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { indexSessions } from "../src/indexer.ts";
 import { openQueryDatabase } from "../src/query-db.ts";
 import { resolvePiParser } from "../src/resolve-pi.ts";
-import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, userSession } from "./sandbox-support.ts";
 
 for (const kind of ["empty-file", "empty-sqlite", "same-version", "extra-object", "future-version", "older-version", "cache-symlink", "hardlink", "sidecar-symlink"] as const) {
   test(`cache refusal is nonmutating: ${kind}`, async (t) => {

@@ -1,4 +1,7 @@
-// Review-only, explicit-run probes. Not part of the normal 159-test suite.
+// Historical extraction-3 acceptance probes, excluded from the default suite.
+// The two genuine-old-cache cases require a verified extraction-1 launcher
+// and the historical extraction-3 target; they are not current-release acceptance.
+// Calendar, record-kind and precision probes can be selected independently.
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { join } from 'node:path';
@@ -6,7 +9,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { extractSession } from '../../src/extract.ts';
 import { sourceTimestamp } from '../../src/timestamps.ts';
 import { resolvePiParser } from '../../src/resolve-pi.ts';
-import { createArchive, createSandbox, fingerprint } from '../prepublication-support.ts';
+import { createArchive, createSandbox, fingerprint } from '../sandbox-support.ts';
 import { toJsonl, writeFixture, type FixtureEntry } from '../fixtures.ts';
 
 // Integer Gregorian civil-day arithmetic, independent of source-string parsing.

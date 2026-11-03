@@ -10,7 +10,7 @@ import { openQueryDatabase } from "../src/query-db.ts";
 import { findBranches } from "../src/queries/branches.ts";
 import { resolvePiParser } from "../src/resolve-pi.ts";
 import { linearLegacyV1Fixture, toJsonl, writeFixture, type FixtureEntry } from "./fixtures.ts";
-import { createArchive, createSandbox, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, createSandbox, fingerprint, userSession } from "./sandbox-support.ts";
 
 type Archive = ReturnType<typeof createSandbox>;
 function query(a: Archive, args: string[], env?: NodeJS.ProcessEnv): any {

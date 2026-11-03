@@ -55,8 +55,8 @@ function unfinishedFixture(
   return base;
 }
 
-test("M3 traces files/commands and finds abandoned or unfinished candidates", async () => {
-  const root = mkdtempSync(join(tmpdir(), "session-atlas-m3-"));
+test("traces files/commands and finds abandoned or unfinished candidates", async () => {
+  const root = mkdtempSync(join(tmpdir(), "session-atlas-investigation-"));
   try {
     const sessionsDirectory = join(root, "sessions");
     const databasePath = join(root, "atlas", "atlas.db");

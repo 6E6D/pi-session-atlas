@@ -6,7 +6,7 @@ import { citationFor, openQueryDatabase, truncateDisplay } from "../src/query-db
 import { searchCommands, type CommandSearchOptions } from "../src/queries/commands.ts";
 import { sessionFromRow } from "../src/queries/helpers.ts";
 import { type FixtureEntry, usage } from "./fixtures.ts";
-import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./sandbox-support.ts";
 
 function fixture(uuid: string, tied = false): FixtureEntry[] {
   const entries = userSession(uuid, []);

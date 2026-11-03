@@ -13,8 +13,8 @@ import { listSessions } from "../src/queries/sessions.ts";
 import { showSession } from "../src/queries/show.ts";
 import { branchedSessionFixture, writeFixture } from "./fixtures.ts";
 
-test("M2 search, sessions, show, and cite contracts use indexed evidence", async () => {
-  const root = mkdtempSync(join(tmpdir(), "session-atlas-m2-"));
+test("search, sessions, show, and cite contracts use indexed evidence", async () => {
+  const root = mkdtempSync(join(tmpdir(), "session-atlas-retrieval-"));
   try {
     const sessionsDirectory = join(root, "sessions");
     const databasePath = join(root, "atlas", "atlas.db");

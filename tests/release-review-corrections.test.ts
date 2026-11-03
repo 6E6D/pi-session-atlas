@@ -10,7 +10,7 @@ import { cite } from "../src/queries/cite.ts";
 import { traceFile } from "../src/queries/trace.ts";
 import type { FixtureEntry } from "./fixtures.ts";
 import { writeFixture } from "./fixtures.ts";
-import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, userSession } from "./sandbox-support.ts";
 
 function toolSession(uuid: string, path: string, second = 1): FixtureEntry[] {
   const timestamp = (value: number) => `2026-09-08T12:00:${String(value).padStart(2, "0")}.000Z`;

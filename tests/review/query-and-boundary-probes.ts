@@ -5,7 +5,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { existsSync, mkdirSync, readFileSync, renameSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { performance } from 'node:perf_hooks';
-import { createArchive, createSandbox, fingerprint, userSession } from '../../tests/prepublication-support.ts';
+import { createArchive, createSandbox, fingerprint, userSession } from '../../tests/sandbox-support.ts';
 import { type FixtureEntry } from '../../tests/fixtures.ts';
 import { copyNode, copyRuntime, npmProbe, runNode, shellQuote, PI_NAME } from '../../tests/package-support.ts';
 import { indexSessions } from '../../src/indexer.ts';

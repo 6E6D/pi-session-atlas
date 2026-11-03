@@ -8,7 +8,7 @@ import { pathToFileURL } from "node:url";
 import { failureFor } from "../src/errors.ts";
 import { AtlasQueryError } from "../src/query-db.ts";
 import { prepareSearchQuery } from "../src/queries/search.ts";
-import { createArchive, createSandbox, envelope, errorEnvelope, projectRoot, userSession } from "./prepublication-support.ts";
+import { createArchive, createSandbox, envelope, errorEnvelope, projectRoot, userSession } from "./sandbox-support.ts";
 
 const texts = ["--help", "-h", "--json", "--", "alpha beta", "alpha", "beta", 'He said "hello".', "literal OR term"];
 const files = { "boundary.jsonl": userSession("fixture-boundary", texts) };

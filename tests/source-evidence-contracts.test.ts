@@ -9,7 +9,7 @@ import { cite } from "../src/queries/cite.ts";
 import { search } from "../src/queries/search.ts";
 import { showSession } from "../src/queries/show.ts";
 import { linearLegacyV1Fixture } from "./fixtures.ts";
-import { createArchive, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, fingerprint, userSession } from "./sandbox-support.ts";
 
 test("modern full/raw retrieval is deliberate, bounded mode excludes raw, and source stays unchanged", async (t) => {
   const text = `Full text\n${"synthetic evidence ".repeat(500)}\nfinal marker`;

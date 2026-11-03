@@ -3,7 +3,7 @@ import { existsSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./sandbox-support.ts";
 
 const prompts = [
   "session-atlas notes",

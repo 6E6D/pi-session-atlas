@@ -7,7 +7,7 @@ import { cacheCoverage, recognizeCache } from "../src/cache.ts";
 import { indexSessions } from "../src/indexer.ts";
 import { openQueryDatabase } from "../src/query-db.ts";
 import { parserIdentityFor } from "../src/resolve-pi.ts";
-import { createArchive, createSandbox, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, createSandbox, fingerprint, userSession } from "./sandbox-support.ts";
 
 function writeSession(path: string, uuid: string, text = "synthetic evidence") {
   writeFileSync(path, userSession(uuid, [text]).map((v) => JSON.stringify(v)).join("\n") + "\n");

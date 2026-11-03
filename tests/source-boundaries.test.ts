@@ -14,7 +14,7 @@ import { showSession } from "../src/queries/show.ts";
 import { verifyCitation } from "../src/queries/cite.ts";
 import { inspectSource, LEGACY_SOURCE_MAX_BYTES, LEGACY_SOURCE_MAX_RECORDS } from "../src/source.ts";
 import { linearLegacyV1Fixture, toJsonl } from "./fixtures.ts";
-import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./sandbox-support.ts";
 
 const code = (expected: string) => (error: any) => error?.code === expected;
 

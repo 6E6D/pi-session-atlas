@@ -9,7 +9,7 @@ import { openQueryDatabase } from "../src/query-db.ts";
 import { showSession } from "../src/queries/show.ts";
 import { cite } from "../src/queries/cite.ts";
 import { linearLegacyV1Fixture, toJsonl } from "./fixtures.ts";
-import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, envelope, errorEnvelope, fingerprint, userSession } from "./sandbox-support.ts";
 
 const legacyId = (index: number) => `v1-${createHash("sha256").update(`fixture-legacy-v1:${index}`).digest("hex").slice(0, 12)}`;
 

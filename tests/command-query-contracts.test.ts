@@ -4,7 +4,7 @@ import { test } from "node:test";
 import { openQueryDatabase } from "../src/query-db.ts";
 import { searchCommands } from "../src/queries/commands.ts";
 import { type FixtureEntry, usage } from "./fixtures.ts";
-import { createArchive, userSession } from "./prepublication-support.ts";
+import { createArchive, userSession } from "./sandbox-support.ts";
 
 function commandSession(count: number): FixtureEntry[] {
   const entries = userSession("fixture-command-contract", []);

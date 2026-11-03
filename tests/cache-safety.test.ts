@@ -8,7 +8,7 @@ import { indexSessions } from "../src/indexer.ts";
 import { openQueryDatabase } from "../src/query-db.ts";
 import { listSessions } from "../src/queries/sessions.ts";
 import { AtlasStore } from "../src/store.ts";
-import { createArchive, createSandbox, fingerprint } from "./prepublication-support.ts";
+import { createArchive, createSandbox, fingerprint } from "./sandbox-support.ts";
 
 for (const rebuild of [false, true]) {
   test(`foreign SQLite file is rejected without mutation (rebuild=${rebuild})`, (t) => {

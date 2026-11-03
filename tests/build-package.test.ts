@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, linkSync, mkdirSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { test } from "node:test";
-import { createArchive, createSandbox, envelope, fingerprint, projectRoot } from "./prepublication-support.ts";
+import { createArchive, createSandbox, envelope, fingerprint, projectRoot } from "./sandbox-support.ts";
 
 const forbiddenRuntimeText = /from ["'][^"']+\.ts["']|sourceMappingURL|\/(?:home|Users)\/[^/\s]+\/|[A-Za-z]:[\\/]Users[\\/]/;
 

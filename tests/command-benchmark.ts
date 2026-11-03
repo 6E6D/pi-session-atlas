@@ -11,7 +11,7 @@ import { searchCommands } from "../src/queries/commands.ts";
 import { AtlasStore } from "../src/store.ts";
 import { ATLAS_EXTRACTION_VERSION, ATLAS_SCHEMA_VERSION, type NormalizedEntry, type NormalizedSession } from "../src/types.ts";
 import { resolvePiParser } from "../src/resolve-pi.ts";
-import { fingerprint, projectRoot } from "./prepublication-support.ts";
+import { fingerprint, projectRoot } from "./sandbox-support.ts";
 
 const totalCalls = 50_000;
 const callsPerSession = 500;

@@ -18,7 +18,7 @@ import { ATLAS_EXTRACTION_VERSION } from "../src/types.ts";
 
 const stamp = "2026-09-21T12:00:00.000Z";
 const row = (type: string, id: string, parentId: string | null, fields = {}) => ({ type, id, parentId, timestamp: stamp, ...fields });
-const header = { type: "session", version: 3, id: "pi087-synthetic", timestamp: stamp, cwd: "/synthetic" };
+const header = { type: "session", version: 3, id: "context-edit-synthetic", timestamp: stamp, cwd: "/synthetic" };
 const original = row("message", "u", null, { message: { role: "user", content: "ORIGINAL_MARKER", timestamp: 0 } });
 const replacement = row("context_edit", "e1", "u", { targetId: "u", replacement: "REPLACEMENT_MARKER" });
 const omit = row("context_edit", "e2", "e1", { targetId: "u", replacement: null });
@@ -26,7 +26,7 @@ function annotate(entries: Record<string, unknown>[], ids = ["u", "e1", "e2"]) {
   return contextAnnotations(entries.map(contextNode).filter(n => n !== null), ids);
 }
 
-test("Pi 0.87 edits preserve original searchable evidence and label replacement evidence", async () => {
+test("Context edits preserve original searchable evidence and label replacement evidence", async () => {
   const parser = (await resolvePiParser()).api;
   const result = extractSession(toJsonl([header, original, replacement, omit]), "/synthetic/a.jsonl", parser);
   assert.ok(result.texts.some(t => t.kind === "user" && t.content === "ORIGINAL_MARKER"));
@@ -78,7 +78,7 @@ test("standalone usage counts once, retains attribution and accepts unknown oper
 });
 
 test("synthetic index/search/show/reports preserve source and expose context history", async () => {
-  const root = mkdtempSync(join(tmpdir(), "atlas-pi087-"));
+  const root = mkdtempSync(join(tmpdir(), "atlas-context-edit-"));
   try {
     const sessionsDirectory = join(root, "sessions");
     const databasePath = join(root, "cache", "atlas.db");
@@ -89,7 +89,7 @@ test("synthetic index/search/show/reports preserve source and expose context his
     await indexSessions({ sessionsDirectory, databasePath });
     const db = openQueryDatabase(databasePath);
     try {
-      const shown = await showSession(db, "pi087-synthetic", "e1", 1);
+      const shown = await showSession(db, "context-edit-synthetic", "e1", 1);
       assert.ok(shown.entries.find(e => e.id === "e1")?.text.includes("replace target=u"));
       assert.equal(shown.contextHistory.entries.find(e => e.entryId === "u")?.editAction, "omit");
       assert.ok(shown.entries.every(e => e.raw === undefined));
@@ -116,7 +116,7 @@ test("extraction identity advances without forgetting recognized v3 path-home bi
 
 
 test("recognized extraction-v3 cache is refused without mutation, explicit synthetic rebuild advances it", async () => {
-  const root = mkdtempSync(join(tmpdir(), "atlas-pi087-cache-"));
+  const root = mkdtempSync(join(tmpdir(), "atlas-context-edit-cache-"));
   try {
     const sessionsDirectory = join(root, "sessions");
     const databasePath = join(root, "cache", "atlas.db");

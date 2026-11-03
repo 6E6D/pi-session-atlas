@@ -32,7 +32,7 @@ export function fingerprint(file: string): { sha256: string; size: number; mtime
 export function createSandbox(t: TestContext) {
   // The space also exercises quoted launcher/path handling. Cleanup is limited
   // to this newly allocated synthetic root, never a caller-supplied directory.
-  const root = mkdtempSync(join(tmpdir(), "session-atlas prepublication-"));
+  const root = mkdtempSync(join(tmpdir(), "session-atlas sandbox-"));
   t.after(() => rmSync(root, { recursive: true, force: true }));
   const sessionsDirectory = join(root, "sessions");
   const atlasHome = join(root, "atlas");

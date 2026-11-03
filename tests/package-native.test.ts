@@ -5,7 +5,7 @@ import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync
 import { dirname, join, resolve } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
-import { createSandbox, envelope, errorEnvelope, fingerprint, projectRoot, userSession } from "./prepublication-support.ts";
+import { createSandbox, envelope, errorEnvelope, fingerprint, projectRoot, userSession } from "./sandbox-support.ts";
 import { linearLegacyV1Fixture, writeFixture } from "./fixtures.ts";
 import { copyNode, runNode } from "./package-support.ts";
 import { resolvePiParser } from "../src/resolve-pi.ts";

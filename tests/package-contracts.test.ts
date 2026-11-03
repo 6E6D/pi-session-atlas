@@ -3,7 +3,7 @@ import { cpSync, existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 
-import { createSandbox, projectRoot } from "./prepublication-support.ts";
+import { createSandbox, projectRoot } from "./sandbox-support.ts";
 
 test("executable works from an installed-shaped node_modules path without dev dependencies", (t) => {
   const sandbox = createSandbox(t);

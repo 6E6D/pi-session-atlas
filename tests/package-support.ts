@@ -3,7 +3,7 @@ import { spawnSync } from "node:child_process";
 import { cpSync, existsSync, lstatSync, mkdirSync, readFileSync, readlinkSync, readdirSync, realpathSync, writeFileSync } from "node:fs";
 import { createRequire } from "node:module";
 import { dirname, isAbsolute, join, relative, sep } from "node:path";
-import { projectRoot } from "./prepublication-support.ts";
+import { projectRoot } from "./sandbox-support.ts";
 
 export const PI_NAME = "@earendil-works/pi-coding-agent";
 export function runNode(node: string, args: string[], cwd: string, env: NodeJS.ProcessEnv) {

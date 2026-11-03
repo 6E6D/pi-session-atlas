@@ -4,11 +4,12 @@ import { join } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
 import { test } from 'node:test';
 import { performance } from 'node:perf_hooks';
-import { createArchive, createSandbox, fingerprint, userSession } from '../../tests/prepublication-support.ts';
+import { createArchive, createSandbox, fingerprint, userSession } from '../../tests/sandbox-support.ts';
 import { copyNode, copyRuntime, npmProbe, runNode } from '../../tests/package-support.ts';
 
-// Independent review probes, intentionally outside the default suite until
-// findings are adjudicated. No TODO/skip; each expectation actually executes.
+// Retained explicit-run safety regressions, outside the default suite.
+// Historical findings were adjudicated; exclusion is not a pending decision.
+// No TODO/skip; each expectation actually executes.
 test('known root-A uncertainty survives failed explicit replacement with root B', async (t) => {
   const a = await createArchive(t, { files: { 'source.jsonl': userSession('fixture-review', ['review text']) } });
   const sourceBefore = fingerprint(join(a.sessionsDirectory, 'source.jsonl'));

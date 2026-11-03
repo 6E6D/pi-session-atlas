@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { test } from "node:test";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, userSession } from "./prepublication-support.ts";
+import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, userSession } from "./sandbox-support.ts";
 import { usage, type FixtureEntry } from "./fixtures.ts";
 import { costReport } from "../src/queries/reports.ts";
 import { openQueryDatabase } from "../src/query-db.ts";

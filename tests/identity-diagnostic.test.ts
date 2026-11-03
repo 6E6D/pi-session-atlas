@@ -3,7 +3,7 @@ import { existsSync } from "node:fs";
 import { test } from "node:test";
 import { recognizeCache } from "../src/cache.ts";
 import { AtlasStore } from "../src/store.ts";
-import { createArchive, errorEnvelope, fingerprint } from "./prepublication-support.ts";
+import { createArchive, errorEnvelope, fingerprint } from "./sandbox-support.ts";
 
 test("identity diagnostic identifies a package-version-only change without blaming parser code", async (t) => {
   const a = await createArchive(t);

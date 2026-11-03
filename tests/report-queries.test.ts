@@ -10,8 +10,8 @@ import { resolvePiParser } from "../src/resolve-pi.ts";
 import { costReport, errorReport } from "../src/queries/reports.ts";
 import { branchedSessionFixture, writeFixture } from "./fixtures.ts";
 
-test("M4 cost and error reports use deterministic indexed facts", async () => {
-  const root = mkdtempSync(join(tmpdir(), "session-atlas-m4-"));
+test("cost and error reports use deterministic indexed facts", async () => {
+  const root = mkdtempSync(join(tmpdir(), "session-atlas-report-"));
   try {
     const sessionsDirectory = join(root, "sessions");
     const databasePath = join(root, "atlas", "atlas.db");

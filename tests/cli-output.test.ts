@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { pathToFileURL } from "node:url";
 
-import { createArchive, createSandbox, projectRoot } from "./prepublication-support.ts";
+import { createArchive, createSandbox, projectRoot } from "./sandbox-support.ts";
 
 const executable = join(projectRoot, "bin", "atlas");
 

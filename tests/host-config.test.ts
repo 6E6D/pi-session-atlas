@@ -6,7 +6,7 @@ import { test, type TestContext } from "node:test";
 import { HostConfigError, resolveHostConfig } from "../src/config.ts";
 import { resolvePiParser } from "../src/resolve-pi.ts";
 import { branchedSessionFixture, linearLegacyV1Fixture, writeFixture } from "./fixtures.ts";
-import { createSandbox, envelope, errorEnvelope, fingerprint, projectRoot } from "./prepublication-support.ts";
+import { createSandbox, envelope, errorEnvelope, fingerprint, projectRoot } from "./sandbox-support.ts";
 import { copyRuntime, shellQuote } from "./package-support.ts";
 
 function setup(t: TestContext) {

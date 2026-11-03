@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { existsSync, mkdirSync, readFileSync, renameSync, symlinkSync, writeFileSync } from "node:fs";
 import { dirname, join, relative, resolve } from "node:path";
 import { test } from "node:test";
-import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, projectRoot, userSession } from "./prepublication-support.ts";
+import { createArchive, createSandbox, envelope, errorEnvelope, fingerprint, projectRoot, userSession } from "./sandbox-support.ts";
 import { writeFixture } from "./fixtures.ts";
 import { copyNode, copyPi, copyRuntime, npmProbe, PI_NAME, runNode, shellQuote } from "./package-support.ts";
 
