@@ -1,12 +1,16 @@
 {
   "name": "session-atlas",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "private": true,
   "description": "Deterministic local index and citation CLI over Pi session archives",
   "author": "Nima Maleki",
   "license": "MIT",
   "type": "module",
-  "keywords": ["pi-package", "session-history", "cli"],
+  "keywords": [
+    "pi-package",
+    "session-history",
+    "cli"
+  ],
   "bin": {
     "atlas": "bin/atlas"
   },
@@ -17,11 +21,14 @@
     "skills/session-atlas/SKILL.md",
     "examples/host.example.json",
     "README.md",
-    "LICENSE"
+    "LICENSE",
+    "docs/assets/session-atlas-overview.png"
   ],
   "pi": {
     "extensions": [],
-    "skills": ["./skills/session-atlas"],
+    "skills": [
+      "./skills/session-atlas"
+    ],
     "prompts": [],
     "themes": []
   },

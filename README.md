@@ -8,9 +8,9 @@ Use it when a question spans conversations: where a file was discussed, which at
 
 ## Install
 
-Download `session-atlas-0.5.1.tgz` and `SHA256SUMS` from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). This is a public preview, not an npm-registry release.
+Download `session-atlas-0.5.2.tgz` and `SHA256SUMS` from [GitHub Releases](https://github.com/6E6D/pi-session-atlas/releases). This is a public preview, not an npm-registry release.
 
-**Requirements:** Node 24.15.0 or a later Node 24 patch. Indexing requires an already installed, trusted Pi parser. The 0.5.1 source passes 198 synthetic tests, including offline installation and native skill discovery, on Linux x64 with Node 24.15.0 and Pi 1.4.0. Other Pi versions and operating systems need their own validation.
+**Requirements:** Node 24.15.0 or a later Node 24 patch. Indexing requires an already installed, trusted Pi parser. The 0.5.2 source passes 198 synthetic tests, including offline installation and native skill discovery, on Linux x64 with Node 24.15.0 and Pi 1.4.0. Other Pi versions and operating systems need their own validation.
 
 In the download directory, verify the checksum, then install into a new, empty directory. Replace the placeholder paths:
 
@@ -18,7 +18,7 @@ In the download directory, verify the checksum, then install into a new, empty d
 sha256sum -c SHA256SUMS
 npm install --offline --ignore-scripts --omit=dev --no-audit --no-fund \
   --prefix /absolute/path/to/atlas-install \
-  /absolute/path/to/session-atlas-0.5.1.tgz
+  /absolute/path/to/session-atlas-0.5.2.tgz
 
 pi install /absolute/path/to/atlas-install/node_modules/session-atlas
 ```
@@ -29,7 +29,7 @@ The last command registers the skill in your user Pi settings; add `-l` for proj
 
 Keep host settings outside versioned installations so direct commands, the skill and scheduled jobs select the same cache and parser.
 
-Create `${XDG_CONFIG_HOME:-~/.config}/session-atlas/host.json` with the following structure. Replace every placeholder with an absolute path; JSON values do not expand `~` or environment variables. Use a private directory and file permissions of `0600`.
+Create `${XDG_CONFIG_HOME:-~/.config}/session-atlas/host.json` with the following structure. Replace every placeholder with an absolute path; JSON values do not expand `~` or environment variables. Use a private directory (mode `0700`) and file permissions of `0600`.
 
 ```json
 {
@@ -102,7 +102,7 @@ An active timer is not proof of a successful scan. Check service logs, failures 
 - **History is evidence, not ground truth.** Old instructions may be unsafe; user-role text is not proof of human authorship. Unfinished-work results are candidates, recorded costs are not invoices, and context-edit history does not reconstruct exactly what a model saw.
 - **Coverage matters.** An empty result from a stale or incomplete cache does not prove absence. Source verification checks identity and indexed size/mtime, not content hashes or factual correctness. Queries leave logical Atlas records unchanged, though SQLite may update WAL/SHM metadata.
 - **Keep private data private.** Sessions and caches can contain secrets. There is no automatic redaction or per-project access isolation. `show --context 0 --json` exposes full raw entries; avoid it for routine browsing. If Pi sends retrieved text to a model, that follows your Pi configuration and permissions, not Atlas's local-only behaviour.
-- **Do not force cache repairs.** Version 0.5.1 retains schema 4 / extraction 4 and does not itself require reindexing. Changed parser identities, older cache formats or archive bindings can require a deliberate rebuild or a new cache. `CACHE_IDENTITY_MISMATCH` names changed fields; it does not mean corruption. Preserve old data, and do not delete locks, relabel caches or bypass refusals.
+- **Do not force cache repairs.** Version 0.5.2 retains schema 4 / extraction 4 and does not itself require reindexing. Changed parser identities, older cache formats or archive bindings can require a deliberate rebuild or a new cache. `CACHE_IDENTITY_MISMATCH` names changed fields; it does not mean corruption. Preserve old data, and do not delete locks, relabel caches or bypass refusals.
 
 ## Development and feedback
 

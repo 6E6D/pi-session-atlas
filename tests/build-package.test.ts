@@ -87,7 +87,7 @@ test("actual allowlisted tarball installs offline without Pi/compiler dependenci
   const a = await createArchive(t); const source = join(a.sessionsDirectory, "fixture.jsonl"); const before = fingerprint(source);
   const packed = command("npm", ["pack", "--offline", "--ignore-scripts", "--json", "--pack-destination", a.root], projectRoot, a.env);
   const details = JSON.parse(packed.stdout)[0] as { filename: string; files: { path: string }[]; bundled: string[] };
-  const expected = ["LICENSE", "README.md", "package.json", "bin/atlas", "skills/session-atlas/SKILL.md", "examples/host.example.json", ...files(join(projectRoot, "dist")).map((p) => `dist/${p}`)].sort();
+  const expected = ["LICENSE", "README.md", "package.json", "bin/atlas", "skills/session-atlas/SKILL.md", "examples/host.example.json", "docs/assets/session-atlas-overview.png", ...files(join(projectRoot, "dist")).map((p) => `dist/${p}`)].sort();
   assert.deepEqual(details.files.map((v) => v.path).sort(), expected); assert.deepEqual(details.bundled, []);
   const tarball = join(a.root, details.filename);
   const listing = command("tar", ["-tzf", tarball], a.root, a.env).stdout.trim().split("\n").sort();
@@ -97,9 +97,11 @@ test("actual allowlisted tarball installs offline without Pi/compiler dependenci
   const installed = join(prefix, "node_modules", "session-atlas");
   const modules = readdirSync(join(prefix, "node_modules")).filter((p) => !p.startsWith("."));
   assert.deepEqual(modules, ["session-atlas"]);
-  for (const name of ["node_modules", "src", "tests", "docs", "deploy", "scripts", ".worktrees", "STATUS.md", "package-lock.json"]) {
+  for (const name of ["node_modules", "src", "tests", "deploy", "scripts", ".worktrees", "STATUS.md", "package-lock.json"]) {
     assert.equal(existsSync(join(installed, name)), false, name);
   }
+  assert.deepEqual(readdirSync(join(installed, "docs")), ["assets"]);
+  assert.deepEqual(readdirSync(join(installed, "docs/assets")), ["session-atlas-overview.png"]);
   for (const path of expected) assert.equal(fingerprint(join(installed, path)).sha256, fingerprint(join(projectRoot, path)).sha256, path);
   assertSkillResources(installed);
   const skill = join(installed, "skills", "session-atlas", "SKILL.md");
